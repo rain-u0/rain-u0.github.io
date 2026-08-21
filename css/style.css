@@ -1,0 +1,883 @@
+/* ═══════════════════════════════════════════════════════════════
+   rain_u.0 — stylesheet
+
+   Same reveal mechanism as the Hyperspace template, rewritten with
+   native APIs (no jQuery, no keyframes for the scroll animations):
+     1. <html class="preload"> kills every transition until the page
+        has loaded, so nothing animates while layout is still settling
+     2. Elements start at opacity:0 + translateY(); adding .in
+        transitions them back into place
+     3. js/main.js adds .in via IntersectionObserver on scroll
+
+   To recolour the site, edit the :root variables below.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Em-dash fix ───────────────────────────────────────────────
+   A Chinese dash is two U+2014 characters. Helvetica Neue sits first
+   in the font stack and does have that glyph, but its em dash carries
+   side bearings, so two in a row show a visible gap: "— —" instead of
+   one continuous rule. CJK fonts draw U+2014 full-width, edge to edge.
+
+   Fix: declare a font that covers only U+2014, point it at a system
+   CJK font, and put it first in the stack. unicode-range scopes it, so
+   only dashes switch fonts and all other text stays Helvetica Neue.
+   ──────────────────────────────────────────────────────────── */
+@font-face {
+  font-family: 'CJKDash';
+  /* local() matches a font's PostScript name, not its family name.
+     'PingFang TC' (the family name) does NOT resolve in Chrome; it has
+     to be 'PingFangTC-Regular'. Both forms are listed because browsers
+     differ, ordered macOS / Windows / Android as fallbacks. */
+  src: local('PingFangTC-Regular'), local('PingFang TC'),
+       local('NotoSansTC-Regular'), local('Noto Sans TC'),
+       local('MicrosoftJhengHeiRegular'), local('Microsoft JhengHei'),
+       local('STHeitiTC-Light');
+  unicode-range: U+2014;
+}
+
+/* ── Design tokens ─────────────────────────────────────────── */
+:root {
+  --bg:          #0d0e12;
+  --bg-raised:   #14161c;
+  --fg:          #e8e6e1;
+  --fg-dim:      #9a978f;
+  --fg-faint:    #5c5a55;
+  --accent:      #c9a227;   /* warm gold, reads filmic against the dark ground */
+  --line:        rgba(232, 230, 225, 0.10);
+
+  --font-sans: 'CJKDash', "Helvetica Neue", "Noto Sans TC", "PingFang TC",
+               "Microsoft JhengHei", system-ui, sans-serif;
+  --font-serif: 'CJKDash', "Georgia", "Noto Serif TC", "Songti TC", serif;
+
+  --ease:   cubic-bezier(0.16, 0.84, 0.44, 1);   /* enter: fast in, slow settle */
+  --dur:    0.9s;
+  --gutter: clamp(1rem, 4vw, 3rem);
+  --maxw:   1400px;
+
+  /* Space reserved along the right edge for the fixed side nav.
+     The nav is position:fixed against the viewport, so content in
+     .wrap must be kept out of its lane or the nav paints over it.
+     Zeroed in the mobile query below, where the nav is hidden.
+     Sized for the widest case, which is the English nav. Measured
+     nav widths: en 118px, ja 88px, zh 75px, ko 62px. */
+  --nav-space: 7.5rem;
+}
+
+/* ── Step 1: freeze animation while loading ───────────────── */
+.preload *,
+.preload *::before,
+.preload *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* ── Base ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.7;
+  letter-spacing: 0.02em;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+img { max-width: 100%; display: block; }
+
+a { color: inherit; text-decoration: none; }
+
+::selection { background: var(--accent); color: #0d0e12; }
+
+/* ── Step 2: shared scroll-reveal class ───────────────────── */
+/* Usage: <div class="reveal">…</div> — JS adds .in on scroll  */
+.reveal {
+  opacity: 0;
+  transform: translateY(1.6em);
+  transition: opacity var(--dur) var(--ease),
+              transform var(--dur) var(--ease);
+  /* --d is the stagger delay, set from HTML or JS */
+  transition-delay: var(--d, 0s);
+}
+.reveal.in { opacity: 1; transform: none; }
+
+/* variant: slide in from the left (for text blocks) */
+.reveal--left { transform: translateX(-1.4em); }
+/* variant: fade only — large images look heavy when they also move */
+.reveal--fade { transform: none; }
+/* variant: fade + slight scale (for photo tiles) */
+.reveal--zoom { transform: translateY(1.4em) scale(0.96); }
+
+/* ── Layout container ─────────────────────────────────────── */
+.wrap {
+  width: 100%;
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+section { position: relative; }
+
+.section-pad { padding: clamp(5rem, 12vh, 9rem) 0; }
+
+/* ── Side navigation ──────────────────────────────────────── */
+.nav {
+  position: fixed;
+  top: 50%;
+  right: clamp(0.9rem, 2.5vw, 2rem);
+  transform: translateY(-50%);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  align-items: flex-end;
+}
+
+.nav a {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  transition: color 0.35s var(--ease);
+  /* The nav is fixed and sits over photos; the shadow keeps it
+     legible against bright backgrounds. */
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.9), 0 0 14px rgba(0, 0, 0, 0.7);
+}
+
+.nav a::after {
+  content: '';
+  width: 1.4rem;
+  height: 1px;
+  background: currentColor;
+  transition: width 0.35s var(--ease), background 0.35s var(--ease);
+}
+
+.nav a:hover,
+.nav a.active { color: var(--fg); }
+.nav a.active::after { width: 2.6rem; background: var(--accent); }
+
+.nav span { opacity: 0; transition: opacity 0.35s var(--ease); }
+.nav a:hover span,
+.nav a.active span { opacity: 1; }
+
+/* ── Hero ─────────────────────────────────────────────────── */
+.hero {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Slowly drifting glow, so a static hero still breathes */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(38% 44% at 22% 28%, rgba(201, 162, 39, 0.13), transparent 70%),
+    radial-gradient(42% 38% at 78% 68%, rgba(84, 108, 168, 0.15), transparent 70%);
+  animation: drift 26s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes drift {
+  from { transform: translate3d(-3%, -2%, 0) scale(1); }
+  to   { transform: translate3d(3%, 2%, 0) scale(1.12); }
+}
+
+/* Hero: text left, portrait right. Stacks on narrow screens. */
+.hero__inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(1.5rem, 4vw, 4rem);
+}
+
+.hero__text { flex: 1 1 auto; min-width: 0; }
+
+.hero__portrait {
+  flex: 0 0 auto;
+  position: relative;
+  width: clamp(150px, 19vw, 240px);
+  aspect-ratio: 1;          /* square */
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--bg-raised);
+  /* The side nav is fixed, vertically centred, and paints above the
+     portrait, so the side-by-side layout must reserve room for it.
+     Reserve it by default and only zero it out in the stacked layout
+     (below 780px). Do NOT gate this behind a min-width query: the
+     stacking breakpoint and the clearance query then disagree and
+     widths in between get no clearance at all. */
+  /* Keep clear of the fixed nav. Uses the same token as the notes
+     so the two can never drift apart. Sized for the widest nav,
+     which is English — its labels ("Wallpapers", "Elsewhere") are
+     far longer than the CJK ones, and the labels occupy layout
+     width even while transparent. */
+  margin-right: var(--nav-space);
+}
+
+.hero__portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: relative;
+  z-index: 1;
+}
+
+/* Dashed placeholder while images/me.jpg is missing, so the hero
+     never shows a broken-image icon */
+.hero__portrait-ph {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.68rem;
+  line-height: 1.8;
+  letter-spacing: 0.06em;
+  color: var(--fg-faint);
+  border: 1px dashed var(--line);
+  border-radius: 2px;
+}
+
+.hero__portrait.is-empty .hero__portrait-ph { display: flex; }
+.hero__portrait.is-empty img { display: none; }
+
+/* Narrow screens: portrait moves above the text. column-reverse
+     puts it first visually while keeping it last in the DOM. */
+@media (max-width: 780px) {
+  .hero__inner {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: clamp(1.2rem, 5vw, 2rem);
+  }
+  .hero__portrait { width: clamp(120px, 34vw, 170px); }
+
+  /* On narrow screens the nav is four anonymous dashes — its labels
+     only appear on hover, which touch devices do not have — and
+     reserving its lane would cost a fifth of the content width.
+     Hide it and reclaim the space; the page is short enough to scroll. */
+  .nav { display: none; }
+  :root { --nav-space: 0rem; }
+}
+
+.hero__eyebrow {
+  font-size: 0.68rem;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 1.6rem;
+}
+
+.hero__title {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(2.7rem, 10vw, 7.6rem);
+  line-height: 1.0;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.hero__title-zh {
+  display: block;
+  margin-top: 0.3em;
+  /* em keeps this in proportion to the title above, so the two read
+     as one lockup. The string length varies a lot by language, so
+     keep taglines short in i18n/strings.json — this line is display
+     type and a wrap leaves an orphan. */
+  font-size: 0.36em;
+  font-style: normal;      /* never italicise CJK — browsers synthesise a slant and it looks crude */
+  letter-spacing: 0.12em;
+  line-height: 1.4;
+  /* em, not ch: ch is the width of the "0" glyph, and one CJK
+     character is roughly two ch, so ch wraps far too early.
+     24em leaves ample headroom. Actual text widths at 1440px, taken
+     with a Range over the text node (a block element's own width is
+     just its container's, so it tells you nothing here): en 743px,
+     ko 603px, ja 539px, zh 539px, against a 24em cap of 1051px.
+     Still keep taglines short — this is display type, and a wrap
+     leaves a single orphan character on the second line. */
+  max-width: 24em;
+  color: var(--fg-dim);
+}
+
+.hero__lede {
+  /* Line breaks are set manually with <br> in the HTML; this only
+     needs to be wide enough not to force an unintended third line.
+     em, not ch — see the note on .hero__title-zh above. */
+  max-width: 18em;
+  margin: 2.2rem 0 0;
+  color: var(--fg-dim);
+  font-size: clamp(0.95rem, 1.4vw, 1.1rem);
+  /* Gap between the two lines. Larger = wider (body default is 1.7). */
+  line-height: 2.1;
+}
+
+/* Hero text rises line by line. Unlike .reveal this does not wait
+   for scroll — it plays as soon as the page loads. */
+.hero .rise {
+  opacity: 0;
+  transform: translateY(1.1em);
+  animation: rise 1.15s var(--ease) forwards;
+  animation-delay: var(--d, 0s);
+}
+
+@keyframes rise {
+  to { opacity: 1; transform: none; }
+}
+
+/* scroll cue */
+.hero__cue {
+  position: absolute;
+  bottom: 2.4rem;
+  left: var(--gutter);
+  font-size: 0.62rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.hero__cue::after {
+  content: '';
+  width: 3rem;
+  height: 1px;
+  background: linear-gradient(90deg, var(--fg-faint), transparent);
+  animation: cue 2.6s var(--ease) infinite;
+  transform-origin: left;
+}
+
+@keyframes cue {
+  0%, 100% { transform: scaleX(0.4); opacity: 0.4; }
+  50%      { transform: scaleX(1);   opacity: 1; }
+}
+
+/* ── Section headings ─────────────────────────────────────── */
+.sec-head {
+  display: flex;
+  align-items: baseline;
+  gap: 1.2rem;
+  padding-bottom: 1.4rem;
+  margin-bottom: clamp(2rem, 5vw, 3.4rem);
+  border-bottom: 1px solid var(--line);
+}
+
+.sec-head__num {
+  font-size: 0.66rem;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+}
+
+.sec-head h2 {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(1.7rem, 4vw, 2.9rem);
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.sec-head__note {
+  margin-left: auto;
+  font-size: 0.76rem;
+  color: var(--fg-faint);
+  text-align: right;
+}
+
+/* ── Gallery filters ──────────────────────────────────────── */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 2.2rem;
+}
+
+.filters button {
+  font-family: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  padding: 0.5rem 1.1rem;
+  cursor: pointer;
+  transition: color 0.3s var(--ease),
+              border-color 0.3s var(--ease),
+              background 0.3s var(--ease);
+}
+
+.filters button:hover { color: var(--fg); border-color: var(--fg-faint); }
+
+.filters button[aria-pressed="true"] {
+  color: #0d0e12;
+  background: var(--fg);
+  border-color: var(--fg);
+}
+
+.filters .count { opacity: 0.55; margin-left: 0.45em; }
+
+/* ── Photo masonry ────────────────────────────────────────── */
+/* CSS columns for masonry: no JS position maths, and portrait
+   photos tile naturally. Note items flow down each column, then
+   to the next — reading order is vertical, not left to right. */
+.gallery {
+  columns: 4;
+  column-gap: clamp(0.6rem, 1.4vw, 1.2rem);
+}
+
+@media (max-width: 1200px) { .gallery { columns: 3; } }
+@media (max-width: 820px)  { .gallery { columns: 2; } }
+@media (max-width: 480px)  { .gallery { columns: 1; } }
+
+.shot {
+  break-inside: avoid;
+  margin-bottom: clamp(0.6rem, 1.4vw, 1.2rem);
+  position: relative;
+  display: block;
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: var(--bg-raised);
+  /* A <button> defaults to the UA's buttontext colour (black), and
+     does not inherit color from its parent. Without this the caption
+     title renders black and vanishes against dark photos. */
+  color: var(--fg);
+  cursor: zoom-in;
+  overflow: hidden;
+  border-radius: 2px;
+}
+
+/* aspect-ratio reserves the slot up front, so nothing shifts
+   while images load */
+.shot__frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--ar, 0.7);
+  overflow: hidden;
+}
+
+.shot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* blurred until decoded, then transitions to sharp */
+  opacity: 0;
+  transform: scale(1.06);
+  filter: blur(12px);
+  transition: opacity 1s var(--ease),
+              transform 1.4s var(--ease),
+              filter 1s var(--ease);
+}
+
+.shot img.loaded {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+/* shown when the file is missing, instead of a broken image */
+.shot img.failed { opacity: 1; filter: none; transform: none; }
+
+.shot__missing {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  text-align: center;
+  padding: 1rem;
+  color: var(--fg-faint);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  background:
+    repeating-linear-gradient(45deg,
+      rgba(232,230,225,0.03) 0 10px,
+      transparent 10px 20px);
+}
+
+.shot.is-missing .shot__missing { display: flex; }
+
+/* hover: image scales slightly, caption slides in */
+.shot__cap {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 2.6rem 0.9rem 0.8rem;
+  text-align: left;
+  background: linear-gradient(to top, rgba(13,14,18,0.9), rgba(13,14,18,0.55) 45%, transparent);
+  /* Photo brightness is not controllable, so back the gradient up
+     with a shadow. Two layers: the tight one adds edge definition,
+     the wide one darkens the area behind the text. */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 0 10px rgba(0, 0, 0, 0.7);
+  opacity: 0;
+  transform: translateY(0.5rem);
+  transition: opacity 0.45s var(--ease), transform 0.45s var(--ease);
+  pointer-events: none;
+}
+
+.shot__cap b {
+  display: block;
+  font-weight: 400;
+  font-size: 0.86rem;
+  letter-spacing: 0.04em;
+}
+
+.shot__cap small {
+  display: block;
+  font-size: 0.66rem;
+  color: var(--fg-dim);
+  letter-spacing: 0.12em;
+}
+
+@media (hover: hover) {
+  .shot:hover img.loaded { transform: scale(1.045); }
+  .shot:hover .shot__cap { opacity: 1; transform: none; }
+}
+
+/* touch devices have no hover, so keep captions visible */
+@media (hover: none) {
+  .shot__cap { opacity: 1; transform: none; }
+}
+
+.shot:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* hidden by the category filter */
+.shot[hidden] { display: none; }
+
+/* ── Nav clearance ────────────────────────────────────────────
+   The side nav is position:fixed against the viewport's right edge
+   and paints above page content, so anything whose text reaches that
+   edge gets covered. Only the last note needs handling — and the
+   padding goes on the note, not on the .notes container: padding on
+   the container shrinks its border-box, which also shortens each
+   note's border-top so those rules stop short of the full-width rule
+   under the section heading. Padding inside the note's own border
+   keeps the rule full width while moving the text clear.
+
+   deliberately left alone
+     .sec-head__note — small, dim, and only coincides with the nav
+                       in passing as you scroll
+     .gallery        — the nav over a photo reads as an overlay, and
+                       it carries a text-shadow to stay legible
+     .links          — nothing in those rows reaches the right edge
+   ──────────────────────────────────────────────────────────── */
+.note:last-child {
+  padding-right: var(--nav-space);
+}
+
+/* ── Notes ────────────────────────────────────────────────── */
+.notes {
+  display: grid;
+  /* The first note is much longer than the other two, and with equal
+     columns it dragged the whole row tall and left a ragged bottom
+     edge. Widening the first column costs the longest note a few
+     lines: measured row height dropped from 399px to 298px. Going
+     past 1.7fr gains nothing and only squeezes the other two. */
+  grid-template-columns: 1.7fr 1fr 1fr;
+  gap: clamp(1.2rem, 3vw, 2.4rem);
+}
+
+/* Single column on narrow screens, where uneven lengths don't
+   compete side by side */
+@media (max-width: 900px) {
+  .notes { grid-template-columns: 1fr; }
+}
+
+.note {
+  border-top: 1px solid var(--line);
+  padding-top: 1.4rem;
+}
+
+/* Shared icon size. em makes icons track the surrounding font size. */
+.ico {
+  width: 1.3em;
+  height: 1.3em;
+  flex: 0 0 auto;
+}
+
+.note time {
+  /* flex rather than inline layout: letter-spacing is 0.2em here and
+     would add a stray gap after an inline icon. */
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: 0.66rem;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  margin-bottom: 0.7rem;
+}
+
+.note h3 {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 1.28rem;
+  margin: 0 0 0.7rem;
+}
+
+.note p {
+  margin: 0;
+  color: var(--fg-dim);
+  font-size: 0.92rem;
+}
+
+/* only needed when a note has more than one paragraph */
+.note p + p { margin-top: 0.9em; }
+
+/* In-body anchor link. Smooth scrolling comes from scroll-behavior
+   on html, which the reduced-motion query below switches to auto. */
+.jump {
+  color: var(--fg);
+  font-weight: 600;
+  border-bottom: 1px solid var(--fg-faint);
+  padding-bottom: 1px;
+  transition: color 0.3s var(--ease), border-color 0.3s var(--ease);
+}
+
+.jump:hover,
+.jump:focus-visible { color: var(--accent); border-color: var(--accent); }
+
+.note a.more {
+  display: inline-block;
+  margin-top: 0.9rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--fg-faint);
+  padding-bottom: 2px;
+  transition: color 0.3s var(--ease), border-color 0.3s var(--ease);
+}
+
+.note a.more:hover { color: var(--accent); border-color: var(--accent); }
+
+/* ── Elsewhere links ──────────────────────────────────────── */
+.links { display: grid; gap: 0; }
+
+.links a {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  padding: 1.5rem 0.4rem;
+  border-top: 1px solid var(--line);
+  font-size: clamp(1.05rem, 2.4vw, 1.6rem);
+  font-family: var(--font-serif);
+  position: relative;
+  transition: padding-left 0.4s var(--ease), color 0.4s var(--ease);
+}
+
+.links a:last-child { border-bottom: 1px solid var(--line); }
+
+/* on hover the row shifts right and a background sweeps across */
+.links a::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--bg-raised);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.5s var(--ease);
+  z-index: -1;
+}
+
+.links a:hover { padding-left: 1.4rem; color: var(--accent); }
+.links a:hover::before { transform: scaleX(1); }
+
+/* ── Footer ───────────────────────────────────────────────── */
+.foot {
+  border-top: 1px solid var(--line);
+  padding: 2.6rem 0 3.4rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--fg-faint);
+  letter-spacing: 0.1em;
+}
+
+/* ── Language switcher ────────────────────────────────────── */
+.lang {
+  display: flex;
+  gap: 0.9rem;
+  align-items: center;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+}
+
+.lang a {
+  color: var(--fg-faint);
+  border-bottom: 1px solid transparent;
+  padding-bottom: 2px;
+  transition: color 0.3s var(--ease), border-color 0.3s var(--ease);
+}
+
+.lang a:hover,
+.lang a:focus-visible { color: var(--fg); border-color: var(--fg-faint); }
+
+/* The current language is a <span>, not a link */
+.lang__on { color: var(--accent); }
+
+.lang .ico { color: var(--fg-faint); margin-right: 0.1rem; }
+
+/* Hero copy: top right, mirroring the SCROLL cue at bottom left.
+   Absolute so it does not push the vertically centred hero content,
+   and it scrolls away with the hero. The fixed side nav is centred
+   vertically, so there is no conflict up here. */
+.lang--top {
+  position: absolute;
+  top: 2.4rem;
+  right: var(--gutter);
+  z-index: 2;
+}
+
+@media (max-width: 780px) {
+  .lang--top { top: 1.2rem; right: var(--gutter); gap: 0.7rem; }
+}
+
+/* ── Lightbox ─────────────────────────────────────────────── */
+.box {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(8, 9, 12, 0.96);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1rem, 4vw, 3rem);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.45s var(--ease), visibility 0.45s;
+}
+
+.box.open { opacity: 1; visibility: visible; }
+
+.box__img {
+  max-width: 100%;
+  max-height: 84vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  transform: scale(0.94);
+  opacity: 0;
+  transition: transform 0.55s var(--ease), opacity 0.55s var(--ease);
+}
+
+.box.open .box__img { transform: none; opacity: 1; }
+
+/* Lightbox footer bar: caption plus the wallpaper toggle */
+.box__bar {
+  position: absolute;
+  bottom: clamp(1rem, 3vh, 2.2rem);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  max-width: calc(100% - 2rem);
+}
+
+.box__cap {
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  color: var(--fg-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.box__cap b { color: var(--fg); font-weight: 400; }
+
+/* This one is a pill, so it must not pick up the round styling
+   applied to the three nav buttons below. */
+.box__mode {
+  border-radius: 100px;
+  padding: 0.42rem 0.95rem;
+  font-family: inherit;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.box__mode[aria-pressed="true"] {
+  color: #0d0e12;
+  background: var(--fg);
+  border-color: var(--fg);
+}
+
+.box__mode[aria-pressed="true"]:hover {
+  background: var(--fg);
+  border-color: var(--fg);
+}
+
+.box__mode[hidden] { display: none; }
+
+@media (max-width: 560px) {
+  .box__bar { flex-direction: column; gap: 0.7rem; text-align: center; }
+}
+
+/* shared by every lightbox button */
+.box button {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--fg);
+  cursor: pointer;
+  transition: border-color 0.3s var(--ease), background 0.3s var(--ease);
+}
+
+.box button:hover { border-color: var(--fg); background: rgba(232,230,225,0.08); }
+
+/* Only close/prev/next are round and absolutely positioned. Scoping
+   this to the three of them keeps the wallpaper toggle out of it —
+   `.box button` (class + type) outranks a lone class, so a shared
+   rule would override the toggle's own shape no matter the order. */
+.box__close,
+.box__prev,
+.box__next {
+  position: absolute;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  font-size: 1rem;
+  display: grid;
+  place-items: center;
+}
+
+.box__close { top: clamp(1rem, 3vh, 2rem); right: clamp(1rem, 3vw, 2rem); }
+.box__prev  { left:  clamp(0.6rem, 2vw, 2rem); top: 50%; margin-top: -1.5rem; }
+.box__next  { right: clamp(0.6rem, 2vw, 2rem); top: 50%; margin-top: -1.5rem; }
+
+body.locked { overflow: hidden; }
+
+/* ── Respect the system reduced-motion setting ────────────── */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .reveal { opacity: 1; transform: none; }
+  .shot img { opacity: 1; filter: none; transform: none; }
+}

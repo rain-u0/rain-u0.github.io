@@ -1,0 +1,133 @@
+{
+  "_readme": [
+    "UI strings for every language. One key per string, four languages side by side",
+    "so a reviewer sees them together. Values may contain inline HTML.",
+    "",
+    "Rule: English-only content is not translated. Where a value is identical in",
+    "all four languages that is deliberate, not an oversight.",
+    "",
+    "The zh values are the source of truth for meaning. Edit strings here, not in",
+    "the generated index*.html — those are overwritten by tools/build.py.",
+    "",
+    "All four languages have been reviewed. Where a translation reads loosely",
+    "against the Chinese that is deliberate: these lines are jokes, and the",
+    "timing matters more than the literal wording. Do not \"correct\" them toward",
+    "a closer gloss without asking.",
+    "",
+    "Taglines are display type with a hard single-line budget. Before changing",
+    "hero.tagline, check it still fits — see .hero__title-zh in css/style.css."
+  ],
+
+  "html.lang":        { "zh": "zh-Hant",  "en": "en",     "ja": "ja",      "ko": "ko" },
+  "lang.label":       { "zh": "中文",     "en": "EN",     "ja": "日本語",  "ko": "한국어" },
+  "lang.aria":        { "zh": "語言選擇", "en": "Language", "ja": "言語の選択", "ko": "언어 선택" },
+
+  "meta.description": {
+    "zh": "手機桌布、隨筆與一些散落的紀錄。",
+    "en": "Phone wallpapers, notes, and a few scattered records.",
+    "ja": "スマホの壁紙と雑記、そして散らばった記録。",
+    "ko": "휴대폰 배경화면과 단상, 그리고 흩어진 기록."
+  },
+
+  "nav.aria":      { "zh": "頁面導覽", "en": "Page navigation", "ja": "ページナビゲーション", "ko": "페이지 내비게이션" },
+  "nav.home":      { "zh": "首頁", "en": "Home",       "ja": "ホーム", "ko": "홈" },
+  "nav.wall":      { "zh": "桌布", "en": "Wallpapers", "ja": "壁紙",   "ko": "배경" },
+  "nav.notes":     { "zh": "隨筆", "en": "Notes",      "ja": "雑記",   "ko": "단상" },
+  "nav.elsewhere": { "zh": "連結", "en": "Elsewhere",  "ja": "リンク", "ko": "링크" },
+
+  "site.title":  { "zh": "rain_u.0", "en": "rain_u.0", "ja": "rain_u.0", "ko": "rain_u.0" },
+
+  "hero.eyebrow": { "zh": "Wallpapers &amp; Notes", "en": "Wallpapers &amp; Notes", "ja": "Wallpapers &amp; Notes", "ko": "Wallpapers &amp; Notes" },
+
+  "hero.tagline": {
+    "zh": "早餐已取消，因為我醒了",
+    "en": "Breakfast cancelled. I woke up",
+    "ja": "朝食は中止。起きたら昼だったので。",
+    "ko": "아침은 취소. 눈을 떴으니까"
+  },
+
+  "hero.lede": {
+    "zh": "其實沒必要煩惱早餐要吃什麼<br>畢竟醒來都中午了",
+    "en": "No point agonising over breakfast<br>when you wake at noon anyway",
+    "ja": "朝食に悩む必要なんてない<br>どうせ起きるのは昼だから",
+    "ko": "아침 메뉴로 고민할 필요는 없다<br>어차피 눈 뜨면 정오니까"
+  },
+
+  "hero.cue": { "zh": "Scroll", "en": "Scroll", "ja": "Scroll", "ko": "Scroll" },
+
+  "hero.portraitAlt": { "zh": "rain_u.0", "en": "rain_u.0", "ja": "rain_u.0", "ko": "rain_u.0" },
+  "hero.portraitPlaceholder": {
+    "zh": "放一張方形照片<br>images/me.jpg",
+    "en": "Drop a square photo here<br>images/me.jpg",
+    "ja": "正方形の写真を置く<br>images/me.jpg",
+    "ko": "정사각형 사진을 넣으세요<br>images/me.jpg"
+  },
+
+  "wall.heading": { "zh": "桌布 Wallpapers", "en": "Wallpapers", "ja": "壁紙 Wallpapers", "ko": "배경화면 Wallpapers" },
+  "wall.count": {
+    "zh": "共 <span id=\"photo-total\">—</span> 張",
+    "en": "<span id=\"photo-total\">—</span> photos",
+    "ja": "全 <span id=\"photo-total\">—</span> 枚",
+    "ko": "총 <span id=\"photo-total\">—</span>장"
+  },
+  "wall.collection": { "zh": "Collection", "en": "Collection", "ja": "Collection", "ko": "Collection" },
+
+  "filter.all":    { "zh": "全部", "en": "All",    "ja": "すべて", "ko": "전체" },
+  "filter.linger": { "zh": "消磨", "en": "Linger", "ja": "長居",   "ko": "머무름" },
+  "filter.travel": { "zh": "旅行", "en": "Travel", "ja": "旅",     "ko": "여행" },
+  "filter.mood":   { "zh": "氛圍", "en": "Mood",   "ja": "空気",   "ko": "분위기" },
+
+  "notes.heading": { "zh": "隨筆 Notes", "en": "Notes", "ja": "雑記 Notes", "ko": "단상 Notes" },
+  "notes.aside": {
+    "zh": "跟曖昧對象都住在地球<br>也算是名副其實的同居了",
+    "en": "My crush and I both live on Earth<br>so technically we live together",
+    "ja": "好きな人と同じ地球に住んでいる<br>つまり実質同棲である",
+    "ko": "썸 타는 사람과 같은 지구에 산다<br>이 정도면 사실상 동거다"
+  },
+
+  "note1.title": { "zh": "想要原始畫質的話", "en": "If you want the originals", "ja": "元の画質が欲しいなら", "ko": "원본 화질을 원한다면" },
+  "note1.p1": {
+    "zh": "這裡放的每張圖都經過壓縮轉檔（長邊縮到 1600px 並轉成 JPEG），為的是讓頁面載得快一點，所以畫質不如原檔。想拿完整解析度的版本，可以到下面的雲端資料夾，依照片的檔名找到對應檔案下載。",
+    "en": "Every image here has been recompressed — long edge capped at 1600px and converted to JPEG — so the page loads quickly. That means the quality is below the original. For the full-resolution version, open the cloud folder below and find the file by its name.",
+    "ja": "ここにある画像はすべて圧縮しています（長辺を 1600px に縮小し JPEG に変換）。ページを軽くするためで、元の画質には及びません。フル解像度が必要な場合は、下のクラウドフォルダでファイル名から探してダウンロードしてください。",
+    "ko": "여기 있는 이미지는 모두 압축했습니다(긴 변을 1600px로 줄이고 JPEG로 변환). 페이지를 빠르게 불러오기 위한 것이라 원본보다 화질이 낮습니다. 원본 해상도가 필요하면 아래 클라우드 폴더에서 파일 이름으로 찾아 내려받으세요."
+  },
+  "note1.p2": {
+    "zh": "另外，有些照片原本是 Live Photo。雲端只留得住靜態的那一張——動態的部分在 iPhone 裡是另一個獨立的影片檔，上傳時不會跟著走。需要 Live 版本的話，請透過下方 <a class=\"jump\" href=\"#links\">Instagram、Threads</a> 連結訊息。",
+    "en": "Some of these were Live Photos. The cloud folder only keeps the still frame — the motion lives in a separate video file inside iPhone's library and does not travel with an upload. If you need the Live version, message me via <a class=\"jump\" href=\"#links\">Instagram or Threads</a> below.",
+    "ja": "また、一部は元々 Live Photo です。クラウドに残るのは静止画だけで、動きの部分は iPhone 内の別の動画ファイルなので、アップロードには付いてきません。Live 版が必要な場合は、下の <a class=\"jump\" href=\"#links\">Instagram・Threads</a> からご連絡ください。",
+    "ko": "또 일부는 원래 Live Photo입니다. 클라우드에는 정지 화면만 남고, 움직이는 부분은 iPhone 안의 별도 동영상 파일이라 업로드할 때 함께 가지 않습니다. Live 버전이 필요하면 아래 <a class=\"jump\" href=\"#links\">Instagram・Threads</a>로 연락해 주세요."
+  },
+  "note1.link": { "zh": "前往雲端下載原檔 →", "en": "Open the cloud folder →", "ja": "クラウドで元ファイルを見る →", "ko": "클라우드에서 원본 보기 →" },
+
+  "note2.title": { "zh": "分享自己的閃耀", "en": "Share what you caught", "ja": "あなたの輝きを分ける", "ko": "당신의 반짝임을 나누기" },
+  "note2.p": {
+    "zh": "這裡的照片不全是我拍的。如果你也有想分享的照片，想讓它出現在這裡、被做成手機桌布，歡迎透過下方 <a class=\"jump\" href=\"#links\">Instagram、Threads</a> 進行投稿。",
+    "en": "Not every photo here is mine. If you have one you would like to share — to see it here, made into a phone wallpaper — send it over via <a class=\"jump\" href=\"#links\">Instagram or Threads</a> below.",
+    "ja": "ここの写真はすべて私が撮ったものではありません。分けたい写真があって、ここに並べて壁紙にしてみたいなら、下の <a class=\"jump\" href=\"#links\">Instagram・Threads</a> から送ってください。",
+    "ko": "여기 사진이 전부 제가 찍은 것은 아닙니다. 나누고 싶은 사진이 있고, 여기에 실려 배경화면이 되었으면 한다면 아래 <a class=\"jump\" href=\"#links\">Instagram・Threads</a>로 보내 주세요."
+  },
+
+  "note3.title": { "zh": "附帶聲明", "en": "A note on rights", "ja": "権利についての注記", "ko": "권리에 관한 안내" },
+  "note3.p": {
+    "zh": "若某張照片牽涉權益問題，或希望撤下來，請直接透過下方 <a class=\"jump\" href=\"#links\">Instagram、Threads</a> 聯絡，會盡快處理。",
+    "en": "If a photo raises a rights issue, or you would like it taken down, contact me via <a class=\"jump\" href=\"#links\">Instagram or Threads</a> below and I will handle it promptly.",
+    "ja": "いずれかの写真に権利上の問題がある場合、または取り下げを希望される場合は、下の <a class=\"jump\" href=\"#links\">Instagram・Threads</a> からご連絡ください。速やかに対応します。",
+    "ko": "어떤 사진에 권리 문제가 있거나 내려주기를 원하시면 아래 <a class=\"jump\" href=\"#links\">Instagram・Threads</a>로 연락해 주세요. 빠르게 처리하겠습니다."
+  },
+
+  "links.heading": { "zh": "別處 Elsewhere", "en": "Elsewhere", "ja": "別の場所 Elsewhere", "ko": "다른 곳 Elsewhere" },
+
+  "footer.shot": { "zh": "Shot on whatever we had", "en": "Shot on whatever we had", "ja": "Shot on whatever we had", "ko": "Shot on whatever we had" },
+
+  "box.aria":  { "zh": "相片檢視", "en": "Photo viewer", "ja": "写真ビューア", "ko": "사진 보기" },
+  "box.close": { "zh": "關閉",   "en": "Close",    "ja": "閉じる", "ko": "닫기" },
+  "box.prev":  { "zh": "上一張", "en": "Previous", "ja": "前へ",   "ko": "이전" },
+  "box.next":  { "zh": "下一張", "en": "Next",     "ja": "次へ",   "ko": "다음" },
+
+  "js.wallpaperOn":  { "zh": "桌布效果", "en": "As wallpaper", "ja": "壁紙で見る", "ko": "배경화면으로" },
+  "js.wallpaperOff": { "zh": "看原圖",   "en": "See photo",    "ja": "写真に戻る", "ko": "사진 보기" },
+  "js.enlarge":      { "zh": "（放大檢視）", "en": " (view larger)", "ja": "（拡大表示）", "ko": "(크게 보기)" },
+  "js.wallpaperAlt": { "zh": "（桌布效果）", "en": " (as wallpaper)", "ja": "（壁紙表示）", "ko": "(배경화면)" },
+  "js.missing":      { "zh": "缺少圖檔", "en": "Missing file", "ja": "画像がありません", "ko": "이미지 없음" }
+}
