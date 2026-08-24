@@ -71,8 +71,25 @@
 
   <!-- ── Side navigation ────────────────────────────────────
        To add a section: add an <a> here whose href matches the
-       id of the corresponding <section> below. -->
-  <nav class="nav" aria-label="페이지 내비게이션">
+       id of the corresponding <section> below.
+
+       Below 780px this same <nav> is restyled as a panel that drops
+       from the button underneath, so a section list stays reachable
+       on touch. One element, two layouts — the active-section
+       indicator in js/main.js needs no special case. -->
+
+  <!-- Only rendered on narrow screens; see .navbtn in the
+       stylesheet. The label stays constant and aria-expanded
+       carries the state, which is what screen readers announce. -->
+  <button type="button" class="navbtn" id="navbtn"
+          aria-label="섹션" aria-expanded="false" aria-controls="nav">
+    <span class="navbtn__bars" aria-hidden="true"></span>
+  </button>
+
+  <!-- Tap-anywhere-to-close layer behind the open panel -->
+  <div class="nav-scrim" id="nav-scrim" hidden></div>
+
+  <nav class="nav" id="nav" aria-label="페이지 내비게이션">
     <a href="#home"><span>홈</span></a>
     <a href="#photos"><span>배경</span></a>
     <a href="#notes"><span>단상</span></a>

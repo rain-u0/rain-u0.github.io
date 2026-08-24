@@ -30,6 +30,7 @@
   },
 
   "nav.aria":      { "zh": "頁面導覽", "en": "Page navigation", "ja": "ページナビゲーション", "ko": "페이지 내비게이션" },
+  "nav.menu":      { "zh": "章節選單", "en": "Sections",        "ja": "セクション",           "ko": "섹션" },
   "nav.home":      { "zh": "首頁", "en": "Home",       "ja": "ホーム", "ko": "홈" },
   "nav.wall":      { "zh": "桌布", "en": "Wallpapers", "ja": "壁紙",   "ko": "배경" },
   "nav.notes":     { "zh": "隨筆", "en": "Notes",      "ja": "雑記",   "ko": "단상" },

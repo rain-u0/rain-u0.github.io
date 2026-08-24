@@ -314,6 +314,59 @@
     sections.forEach(function (s) { navObserver.observe(s); });
   }
 
+  /* ── Mobile nav toggle ──────────────────────────────────── */
+  /* Below 780px the side rail is restyled as a panel behind a button
+     in the top left corner (see the mobile query in style.css). It is
+     the same <nav> element, so the indicator above still applies —
+     nothing here knows about sections.
+
+     State lives in one place: body.nav-open drives the CSS, and
+     aria-expanded mirrors it for assistive tech. */
+  var navBtn   = document.getElementById('navbtn');
+  var navScrim = document.getElementById('nav-scrim');
+  var navEl    = document.getElementById('nav');
+
+  if (navBtn && navEl) {
+    var navIsOpen = function () {
+      return document.body.classList.contains('nav-open');
+    };
+
+    var setNav = function (open) {
+      document.body.classList.toggle('nav-open', open);
+      navBtn.setAttribute('aria-expanded', String(open));
+      /* Removed from the tree while closed, so an invisible sheet is
+         never left swallowing taps. The delay lets the fade finish. */
+      if (!navScrim) return;
+      if (open) {
+        navScrim.hidden = false;
+      } else {
+        setTimeout(function () { if (!navIsOpen()) navScrim.hidden = true; }, 300);
+      }
+    };
+
+    navBtn.addEventListener('click', function () { setNav(!navIsOpen()); });
+
+    /* Every link jumps to a section, so the panel has done its job */
+    navEl.addEventListener('click', function (e) {
+      if (e.target.closest('a')) setNav(false);
+    });
+
+    if (navScrim) navScrim.addEventListener('click', function () { setNav(false); });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape' || !navIsOpen()) return;
+      setNav(false);
+      navBtn.focus();
+    });
+
+    /* Crossing back over the breakpoint restores the desktop rail,
+       which ignores nav-open — but aria-expanded would still read
+       true, and the scrim would still be covering the page. */
+    window.addEventListener('resize', function () {
+      if (window.innerWidth > 780 && navIsOpen()) setNav(false);
+    });
+  }
+
   /* Hero portrait: show the placeholder if the file is missing */
   var me = document.getElementById('me');
   if (me) {

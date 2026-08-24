@@ -61,6 +61,13 @@
      Sized for the widest case, which is the English nav. Measured
      nav widths: en 118px, ja 88px, zh 75px, ko 62px. */
   --nav-space: 7.5rem;
+
+  /* Mobile nav button. Named here because the dropdown panel has to
+     hang off the bottom of the button, and hard-coding the same
+     numbers in two places is how they drift apart. */
+  --navbtn-top:  clamp(0.9rem, 3vw, 1.4rem);
+  --navbtn-left: clamp(0.9rem, 4vw, 1.4rem);
+  --navbtn-size: 2.75rem;
 }
 
 /* ── Step 1: freeze animation while loading ───────────────── */
@@ -171,6 +178,81 @@ section { position: relative; }
 .nav a:hover span,
 .nav a.active span { opacity: 1; }
 
+/* ── Mobile nav button ────────────────────────────────────────
+   Hidden on desktop, where the side nav is always on screen. The
+   mobile query below switches it on and turns .nav into the panel
+   it opens. Sits above the panel (50) and its scrim (45), below
+   the lightbox (100), so opening a photo covers it.
+   ──────────────────────────────────────────────────────────── */
+.navbtn {
+  display: none;
+  position: fixed;
+  top: var(--navbtn-top);
+  left: var(--navbtn-left);
+  z-index: 60;
+  width: var(--navbtn-size);
+  height: var(--navbtn-size);
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  /* Same reason the side nav carries a text-shadow: this floats over
+     photos, and a bright one would swallow a bare glyph. */
+  background: rgba(13, 14, 18, 0.72);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  color: var(--fg);
+  cursor: pointer;
+  transition: background 0.35s var(--ease), border-color 0.35s var(--ease);
+}
+
+.navbtn[aria-expanded="true"] { background: var(--bg-raised); border-color: var(--accent); }
+
+/* Three bars from one element: the middle is the span itself, the
+   outer two are its pseudo-elements pushed apart. */
+.navbtn__bars {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1.05rem;
+  height: 1px;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+  transition: background 0.2s var(--ease);
+}
+
+.navbtn__bars::before,
+.navbtn__bars::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: currentColor;
+  transition: transform 0.35s var(--ease);
+}
+
+.navbtn__bars::before { transform: translateY(-5px); }
+.navbtn__bars::after  { transform: translateY(5px); }
+
+/* Open: the middle bar goes out and the other two cross into an X */
+.navbtn[aria-expanded="true"] .navbtn__bars { background: transparent; }
+.navbtn[aria-expanded="true"] .navbtn__bars::before { transform: rotate(45deg); }
+.navbtn[aria-expanded="true"] .navbtn__bars::after  { transform: rotate(-45deg); }
+
+/* Tap-to-dismiss layer. [hidden] is toggled by js/main.js so it is
+   fully out of the tree when closed, rather than an invisible sheet
+   sitting over the page. */
+.nav-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  background: rgba(8, 9, 12, 0.5);
+  opacity: 0;
+  transition: opacity 0.3s var(--ease);
+}
+.nav-scrim[hidden] { display: none; }
+body.nav-open .nav-scrim { opacity: 1; }
+
 /* ── Hero ─────────────────────────────────────────────────── */
 .hero {
   min-height: 100svh;
@@ -270,12 +352,72 @@ section { position: relative; }
   }
   .hero__portrait { width: clamp(120px, 34vw, 170px); }
 
-  /* On narrow screens the nav is four anonymous dashes — its labels
-     only appear on hover, which touch devices do not have — and
-     reserving its lane would cost a fifth of the content width.
-     Hide it and reclaim the space; the page is short enough to scroll. */
-  .nav { display: none; }
+  /* On narrow screens the side nav cannot stay as it is: its labels
+     only appear on hover, which touch devices do not have, so it
+     reads as four anonymous dashes — and reserving its lane would
+     cost a fifth of the content width.
+
+     So it collapses behind .navbtn in the top left and reopens as a
+     panel. Nothing reserves layout space: both are position:fixed
+     overlays, hence --nav-space stays at zero. */
   :root { --nav-space: 0rem; }
+
+  .navbtn { display: block; }
+
+  .nav {
+    /* Undo the vertically-centred right rail */
+    top: calc(var(--navbtn-top) + var(--navbtn-size) + 0.55rem);
+    left: var(--navbtn-left);
+    right: auto;
+    z-index: 50;
+    gap: 0.15rem;
+    align-items: stretch;
+    min-width: 11rem;
+    padding: 0.45rem;
+    border: 1px solid var(--line);
+    border-radius: 0.8rem;
+    background: rgba(16, 17, 22, 0.94);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+
+    /* Closed. visibility (not display) so the panel can transition,
+       and so its links stay out of the tab order while shut. */
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(-0.5rem);
+    transition: opacity 0.3s var(--ease),
+                transform 0.3s var(--ease),
+                visibility 0.3s;
+  }
+
+  body.nav-open .nav {
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+  }
+
+  .nav a {
+    justify-content: space-between;
+    padding: 0.62rem 0.7rem;
+    border-radius: 0.55rem;
+    font-size: 0.68rem;
+    color: var(--fg-dim);
+    /* The panel is its own solid ground, so the shadow that keeps the
+       rail legible over photos would only muddy the text here. */
+    text-shadow: none;
+  }
+
+  /* No hover on touch, so the labels have to be visible outright —
+     an unreadable menu is the problem this replaces. */
+  .nav span { opacity: 1; }
+
+  .nav a::after { width: 0.85rem; }
+  .nav a.active {
+    color: var(--accent);
+    background: rgba(201, 162, 39, 0.09);
+  }
+  .nav a.active::after { width: 1.5rem; }
 }
 
 .hero__eyebrow {
