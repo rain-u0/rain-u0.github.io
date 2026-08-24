@@ -62,16 +62,17 @@ Copy the generated rows from `tools/photos-data.txt` and fill in the
 titles and category:
 
 ```js
-{ file: 'ginkgo_forest', zh: '銀杏森林', en: 'Ginkgo Forest', cat: 'mood', w: 909, h: 1600, demo: true },
+{ file: 'ginkgo_forest', cat: 'mood', w: 909, h: 1600, demo: true,
+  t: { zh: '銀杏森林', en: 'Ginkgo Forest', ja: 'イチョウの森', ko: '은행나무 숲' } },
 ```
 
 | Field | Notes |
 |---|---|
 | `file` | basename in `images/`, without `.jpg`. Must match exactly. |
-| `zh` / `en` | display titles. Escape any straight apostrophe as `\'`. |
-| `cat` | must match a `data-filter` value in `index.html` |
+| `cat` | must match a `data-filter` value in `template.html` |
 | `w`, `h` | pixel size. Only the ratio matters — it reserves the tile so layout does not shift while loading. |
-| `demo` | `true` if `images/<file>_demo.jpg` exists, which adds the wallpaper toggle in the lightbox. Omit otherwise. |
+| `demo` | always `true`. Every photo is meant to have `images/<file>_demo.jpg`, so the script writes it unconditionally: a missing shot then shows as a lightbox toggle that will not stick, rather than passing unnoticed. |
+| `t` | display titles, one per language. All four are required — `main.js` reads `t[lang]` and falls back to an empty string, so a missing one renders an untitled tile and reports nothing. Escape any straight apostrophe as `\'`. |
 
 Keep each row inside the matching category block. The blocks are only
 comments, but the gallery renders in array order, so a row in the wrong
@@ -90,15 +91,26 @@ before the script runs.
 
 ## Adding a category
 
-1. Add a button in `index.html`, inside the filter row:
+1. Add a button in `template.html`, inside the filter row:
 
    ```html
-   <button type="button" data-filter="street" aria-pressed="false">街拍</button>
+   <button type="button" data-filter="street" aria-pressed="false">{{filter.street}}</button>
    ```
 
-2. Use that same value as `cat` on the relevant rows in `js/photos.js`.
+2. Add that key to `i18n/strings.json`, in all four languages:
 
-3. Optionally add a comment block in `photos.js` and group the rows
+   ```json
+   "filter.street": { "zh": "街拍", "en": "Street", "ja": "街", "ko": "거리" }
+   ```
+
+   The build aborts on a key that is used but undefined, or missing a
+   language, so this step cannot be skipped silently.
+
+3. Run `python3 tools/build.py`.
+
+4. Use that same value as `cat` on the relevant rows in `js/photos.js`.
+
+5. Optionally add a comment block in `photos.js` and group the rows
    under it, to keep the file readable.
 
 No JavaScript or CSS changes. The count appears automatically, and

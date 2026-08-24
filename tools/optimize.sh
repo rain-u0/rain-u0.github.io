@@ -31,7 +31,10 @@
 #   then hand that to sips for the resize. Temp files are deleted.
 #
 # Everything here ships with macOS. Nothing to install.
-# Prints the w / h values that js/photos.js needs.
+#
+# Writes tools/photos-data.txt: one ready-to-paste js/photos.js row
+# per photo, with the measured w / h already filled in. Only cat and
+# the four titles are left to write.
 # ═══════════════════════════════════════════════════════════════
 set -u
 
@@ -122,7 +125,21 @@ print(re.sub(r'[^a-z0-9_]+', '_', s.lower()).strip('_'))
       ;;
     *)
       printf '  %-28s %4sx%-4s  %4s KB\n' "$stem" "$w" "$h" "$kb"
-      echo "  { file: '$stem', zh: '', en: '', cat: '', w: $w, h: $h, demo: true }," >> "$SNIPPET"
+      # The shape has to match js/photos.js exactly. Titles live in a
+      # nested `t` block, one per language — main.js reads
+      # photo.t[LANG] and falls back to an empty string, so a row in
+      # the older flat shape renders the photo with no title and
+      # reports no error at all.
+      #
+      # demo is always true, deliberately. Every photo here is meant
+      # to have a wallpaper shot, so a missing one should show:
+      # the toggle appears and refuses to stick. Resolving demo from
+      # whether the file happens to exist would hide the omission
+      # instead of surfacing it.
+      {
+        echo "  { file: '$stem', cat: '', w: $w, h: $h, demo: true,"
+        echo "    t: { zh: '', en: '', ja: '', ko: '' } },"
+      } >> "$SNIPPET"
       ;;
   esac
 done
@@ -134,3 +151,4 @@ echo "Total size: $(du -sh "$OUT" | cut -f1)"
 echo
 echo "If you replaced photos, update the w / h values in js/photos.js."
 echo "Ready-to-paste rows are in: tools/photos-data.txt"
+echo "Fill in cat and the four titles; both are left blank on purpose."
