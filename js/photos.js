@@ -79,6 +79,8 @@ const PHOTOS = [
     t: { zh: '澎湖白沙・黑白', en: 'Baisha, Penghu — B&W', ja: '澎湖 白沙・モノクロ', ko: '펑후 바이사・흑백' } },
   { file: 'taehwagang_national_garden', cat: 'travel', w: 911, h: 1600, demo: true,
     t: { zh: '蔚山太和江國家庭園', en: 'Taehwagang National Garden', ja: '蔚山 太和江国家庭園', ko: '울산 태화강 국가정원' } },
+  { file: 'gunsan_cafe_la_phare', cat: 'travel', w: 911, h: 1600, demo: true,
+    t: { zh: '群山市 Cafe La Phare', en: 'Cafe La Phare, Gunsan', ja: '群山 Cafe La Phare', ko: '군산시・카페 라파르' } },
   { file: 'korea_road_31_pension', cat: 'travel', w: 915, h: 1600, demo: true,
     t: { zh: '慶州市 Road 31 Pension', en: 'Road 31 Pension, Korea', ja: '慶州 Road 31 Pension', ko: '경주 Road 31 Pension' } },
   { file: 'daegu_83_tower_road', cat: 'travel', w: 1178, h: 2046, demo: true,
