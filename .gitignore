@@ -1,0 +1,11 @@
+# Everything committed here is served publicly by GitHub Pages, so
+# keep incidental local files out of the repo rather than off the
+# site. Note this only affects files git is not already tracking.
+
+# Scratch output from tools/optimize.sh. Regenerated on every run;
+# paste the rows into js/photos.js and it has served its purpose.
+tools/photos-data.txt
+
+# Finder writes one of these into every folder it opens, and it
+# lists the directory's contents — including files since deleted.
+.DS_Store
