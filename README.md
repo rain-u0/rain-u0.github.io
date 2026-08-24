@@ -30,9 +30,145 @@ python3 tools/build.py
 
 ---
 
+# Adding a photo, start to finish
+
+**Adding a photo never needs `build.py`.** That script reads only
+`template.html` and `i18n/strings.json`; the photo list is not one of
+its inputs. Add the row, and every page picks it up.
+
+There are two routes, and which one you take depends on one thing:
+**can you run `tools/optimize.sh`?** It needs `qlmanage` and `sips`,
+which only exist on macOS. Everything else — git, the browser, the
+site itself — works anywhere.
+
+Pick one route. Do not mix them: the script writes its output
+straight into `images/` in your local clone, so once it has run, the
+files are already where they need to be and uploading them through
+the browser would only be a detour.
+
+---
+
+## Route A — on a Mac, with git
+
+Four steps. The script does all the fiddly parts.
+
+**1. Put the originals in a folder.**
+
+```
+~/Downloads/new-photos/
+  morning_latte.HEIC          the photo
+  morning_latte_demo.PNG      the lock screen with it set as wallpaper
+```
+
+Two rules:
+
+- The wallpaper shot must be **the same name plus `_demo`**. That
+  suffix is how the script tells the two apart.
+- **Rename anything not in English first.** A name with no ASCII left
+  in it — `夕陽.HEIC`, say — sanitises down to an empty string, and
+  the script skips the file. It says so, but the line is easy to miss
+  in a long run.
+
+**2. Run the script.**
+
+```bash
+cd ~/rain-u0.github.io
+bash tools/optimize.sh ~/Downloads/new-photos
+```
+
+```
+  morning_latte           1179x2066   287 KB
+  morning_latte_demo      1179x2556   341 KB   (wallpaper shot)
+
+Ready-to-paste rows are in: tools/photos-data.txt
+```
+
+That single command converts HEIC to JPEG, caps the long edge at
+1600px, fixes the rotation, lower-cases the filename, measures the
+image, and writes the finished row. Nothing here is left to do by
+hand.
+
+**3. Paste the row into `js/photos.js`.**
+
+Open `tools/photos-data.txt` and copy the entry — **both lines**,
+it is one row wrapped for width:
+
+```js
+  { file: 'morning_latte', cat: '', w: 1179, h: 2066, demo: true,
+    t: { zh: '', en: '', ja: '', ko: '' } },
+```
+
+Fill in `cat` and all four titles. This is the only part that needs
+you; the numbers are already correct. Paste it under the matching
+category comment — the gallery renders in array order, so a row in
+the wrong block appears out of group under "All".
+
+**4. Preview, then push.**
+
+```bash
+python3 -m http.server 8000     # http://localhost:8000
+git add -A
+git commit -m "Add morning_latte"
+git push
+```
+
+The photo count in the heading and on every filter button is computed
+at runtime, so no number anywhere needs touching.
+
+---
+
+## Route B — no dev environment, browser only
+
+Use this on a borrowed machine, on Windows, or on Linux — anywhere
+`optimize.sh` cannot run. It works, but the script's whole job now
+falls to you.
+
+**1. Prepare each image yourself**, to the same four requirements:
+
+| Requirement | Why |
+|---|---|
+| JPEG, not HEIC | Chrome and Firefox cannot display HEIC at all |
+| Long edge ≤ 1600px | originals run several MB; this lands at 200–400 KB |
+| Filename lower-case, ASCII only, no spaces | Pages matches paths byte for byte, so `.JPG` or an `ä` 404s once deployed |
+| Rotation already applied | a portrait phone photo is landscape pixels plus a rotate flag; strip the flag and it ships sideways |
+
+Name the wallpaper shot `<photo>_demo.jpg`.
+
+**2. Measure each image.** You need its pixel width and height for
+the next step. Finder's Get Info on macOS, right-click → Properties →
+Details on Windows.
+
+**3. Upload.** On the repo: **Add file → Upload files**, drop them
+into `images/`, commit. The uploader takes 100 files at a time.
+
+**4. Edit `js/photos.js` in the browser.** Open it, click the pencil,
+add the row by hand, commit:
+
+```js
+  { file: 'morning_latte', cat: 'linger', w: 1179, h: 2066, demo: true,
+    t: { zh: '晨間拿鐵', en: 'Morning Latte', ja: '朝のラテ', ko: '아침 라떼' } },
+```
+
+---
+
+## Either route
+
+**All four titles are required.** `main.js` reads `t[lang]` and falls
+back to an empty string, so a language left blank renders an untitled
+tile on that page and reports nothing. One row serves all four
+languages — the same `js/photos.js` is loaded by all four pages, and
+the filename itself has no language.
+
+**Never upload `tools/photos-data.txt`.** It is scratch: rewritten
+from scratch on every run, and spent the moment its rows are pasted
+across. `.gitignore` already keeps it out.
+
+---
+
 ## Adding photos
 
-Two steps: process the files, then add a row per photo.
+Reference behind the two routes above: why the script is not
+optional, and what each field in a row means.
 
 ### 1. Process the files
 
