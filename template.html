@@ -305,6 +305,11 @@
     </div>
   </footer>
 
+  <!-- Names the palette you just picked, then fades. aria-hidden
+       because the buttons already carry aria-pressed, and a live
+       region here would announce the same change a second time. -->
+  <div class="toast" id="theme-toast" aria-hidden="true"></div>
+
   <!-- ── Lightbox ───────────────────────────────────────────
        Opens when a photo is clicked. Arrow keys move between
        photos, Esc closes, W toggles the wallpaper preview. -->

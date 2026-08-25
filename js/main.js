@@ -407,9 +407,31 @@
       try { localStorage.setItem('theme', name); } catch (e) {}
     };
 
+    /* Name the palette on switch, then fade. The name is read off the
+       button's own aria-label rather than passed through window.I18N,
+       which keeps it in one place per language and out of the build's
+       JS_KEYS list. */
+    var toast = document.getElementById('theme-toast');
+    var toastTimer;
+
+    var flashName = function (name) {
+      if (!toast || !name) return;
+      toast.textContent = name;
+      toast.classList.add('show');
+      /* Restart the clock on every switch, so clicking through the
+         dots reads as one label changing rather than a queue. */
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () {
+        toast.classList.remove('show');
+      }, 800);
+    };
+
     themeBtns.forEach(function (b) {
       b.addEventListener('click', function () {
         applyTheme(b.dataset.themeSet, true);
+        /* Only on a click. The initial sync below must stay silent —
+           nobody chose anything on page load. */
+        flashName(b.getAttribute('aria-label'));
       });
     });
 

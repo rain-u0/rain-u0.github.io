@@ -20,7 +20,7 @@
   <title>rain_u.0</title>
   <meta name="description" content="手機桌布、隨筆與一些散落的紀錄。">
 
-  <link rel="stylesheet" href="css/style.css?v=89a7136589">
+  <link rel="stylesheet" href="css/style.css?v=6384b328e3">
 
   <!-- Applies the saved palette before the first paint. It has to be
        inline and it has to be here: loaded from a file, or moved to
@@ -311,6 +311,11 @@
     </div>
   </footer>
 
+  <!-- Names the palette you just picked, then fades. aria-hidden
+       because the buttons already carry aria-pressed, and a live
+       region here would announce the same change a second time. -->
+  <div class="toast" id="theme-toast" aria-hidden="true"></div>
+
   <!-- ── Lightbox ───────────────────────────────────────────
        Opens when a photo is clicked. Arrow keys move between
        photos, Esc closes, W toggles the wallpaper preview. -->
@@ -330,6 +335,6 @@
 
   <script>window.I18N = {"js.wallpaperOn": "桌布效果", "js.wallpaperOff": "看原圖", "js.enlarge": "（放大檢視）", "js.wallpaperAlt": "（桌布效果）", "js.missing": "缺少圖檔"};</script>
   <script src="js/photos.js?v=3b11b6f8a4"></script>
-  <script src="js/main.js?v=15c43b0ded"></script>
+  <script src="js/main.js?v=0f89daac8d"></script>
 </body>
 </html>

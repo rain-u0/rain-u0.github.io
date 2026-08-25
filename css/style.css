@@ -1090,6 +1090,49 @@ body.nav-open .nav-scrim { opacity: 1; }
   box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--fg-dim);
 }
 
+/* ── Theme toast ───────────────────────────────────────────────
+   Names the palette on switch, then fades. Sits above the mobile
+   nav panel and its button, below the lightbox, so opening a photo
+   covers it. Never interactive — pointer-events stay off so it
+   cannot swallow a click on whatever is beneath it.
+
+   No panel behind it: it is bare text over whatever is there, so it
+   borrows the side nav's halo, which already flips white on the two
+   light palettes.
+
+   Cleared of the hero corner above it — that block is two rows tall
+   on narrow screens, and this is centred, so they would meet.
+   ──────────────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  left: 50%;
+  top: clamp(5rem, 13vh, 7.5rem);
+  z-index: 90;
+  font-size: clamp(1rem, 2vw, 1.35rem);
+  font-style: italic;
+  /* Tracking comes down as the size goes up; 0.22em is tuned for the
+     0.62rem nav labels and would be gappy here. */
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg);
+  text-shadow: var(--rail-shadow);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, -0.5rem);
+  transition: opacity 0.4s var(--ease),
+              transform 0.4s var(--ease),
+              visibility 0.4s;
+}
+
+.toast.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
+
+
 /* Repeated from the palettes above on purpose: a dot has to show its
    own colours whether or not it is the theme currently applied, so
    these cannot come from the inherited custom properties. */
