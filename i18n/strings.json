@@ -36,6 +36,13 @@
   "nav.notes":     { "zh": "隨筆", "en": "Notes",      "ja": "雑記",   "ko": "단상" },
   "nav.elsewhere": { "zh": "連結", "en": "Elsewhere",  "ja": "リンク", "ko": "링크" },
 
+  "theme.aria":   { "zh": "主題色調",   "en": "Colour theme", "ja": "テーマカラー", "ko": "테마 색상" },
+  "theme.gold":   { "zh": "金",         "en": "Gold",         "ja": "ゴールド",     "ko": "골드" },
+  "theme.ocean":  { "zh": "海洋",       "en": "Ocean",        "ja": "オーシャン",   "ko": "오션" },
+  "theme.sweet":  { "zh": "甜蜜",       "en": "Sweet",        "ja": "スイート",     "ko": "스위트" },
+  "theme.forest": { "zh": "森林",       "en": "Forest",       "ja": "フォレスト",   "ko": "포레스트" },
+  "theme.dusk":   { "zh": "暮色",       "en": "Dusk",         "ja": "ダスク",       "ko": "더스크" },
+
   "site.title":  { "zh": "rain_u.0", "en": "rain_u.0", "ja": "rain_u.0", "ko": "rain_u.0" },
 
   "hero.eyebrow": { "zh": "Wallpapers &amp; Notes", "en": "Wallpapers &amp; Notes", "ja": "Wallpapers &amp; Notes", "ko": "Wallpapers &amp; Notes" },
