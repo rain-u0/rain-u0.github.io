@@ -27,6 +27,7 @@ carry the same value in all four languages on purpose; the generator
 does not treat them specially.
 """
 
+import hashlib
 import json
 import re
 import sys
@@ -34,6 +35,20 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 LANGS = ["zh", "en", "ja", "ko"]
+
+# Assets whose URLs carry a hash of their own contents.
+#
+# Not an optimisation — a correctness fix. GitHub Pages serves
+# everything with max-age=600, and gives a page and its assets
+# independent lifetimes, so for ten minutes after a deploy a browser
+# can hold new markup against a stylesheet it cached before it. That
+# is not a cosmetic mismatch: rules the new markup depends on are
+# simply absent, and the layout collapses. It has happened here.
+#
+# A content hash in the query string means changed asset, new URL, so
+# the two can never be paired. An unchanged asset keeps its hash and
+# stays cached.
+ASSETS = ["css/style.css", "js/photos.js", "js/main.js"]
 
 # Which file each language writes to. zh keeps the bare name so the
 # default URL stays clean.
@@ -111,6 +126,12 @@ def build(template, strings, lang):
              + ';</script>\n')
     page = page.replace('  <script src="js/photos.js"></script>',
                         block + '  <script src="js/photos.js"></script>')
+
+    # Last, so the two replacements above still match plain filenames
+    for rel in ASSETS:
+        digest = hashlib.sha256((ROOT / rel).read_bytes()).hexdigest()[:10]
+        page = page.replace('"' + rel + '"', '"' + rel + '?v=' + digest + '"')
+
     return page
 
 
