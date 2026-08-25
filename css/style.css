@@ -1038,13 +1038,27 @@ body.nav-open .nav-scrim { opacity: 1; }
   right: var(--gutter);
   z-index: 2;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.85rem;
+  align-items: center;
+  /* Wraps rather than overflows: the two groups together run about
+     250px at their widest, which the narrowest phones cannot give up
+     alongside the menu button in the opposite corner. */
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.6rem 1.1rem;
 }
 
 @media (max-width: 780px) {
-  .hero__corner { top: 1.2rem; gap: 0.7rem; }
+  .hero__corner {
+    top: 1.2rem;
+    gap: 0.55rem 0.9rem;
+    /* Leave the menu button its own corner. The row is about 300px
+       wide, which clears a 390px screen and does not clear a 360px
+       one, so cap it at what is actually free and let it wrap to two
+       rows instead of running under the button. Written from the
+       button's own tokens so it cannot drift if that changes. */
+    max-width: calc(100vw - var(--navbtn-left) - var(--navbtn-size)
+                    - var(--gutter) - 0.8rem);
+  }
   .hero__corner .lang { gap: 0.7rem; }
 }
 
