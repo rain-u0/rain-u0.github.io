@@ -367,59 +367,6 @@
     });
   }
 
-  /* ── Theme ──────────────────────────────────────────────── */
-  /* A palette is a set of custom properties selected by data-theme
-     on <html>; see the top of css/style.css. The inline script in
-     <head> has already applied the stored choice by the time this
-     runs — doing it here would be too late, the page would have
-     painted. What is left is switching, keeping both switchers in
-     step, and remembering the choice.
-
-     To add a palette: a :root[data-theme="name"] block and a
-     .theme__dot rule in the stylesheet, a button in template.html,
-     and the name in the list below. */
-  var THEMES = ['gold', 'ocean', 'sweet', 'forest', 'dusk'];
-  var themeBtns = Array.prototype.slice.call(
-    document.querySelectorAll('[data-theme-set]'));
-
-  if (themeBtns.length) {
-    var applyTheme = function (name, remember) {
-      /* A palette dropped from the stylesheet would otherwise leave
-         the page with an attribute nothing styles */
-      if (THEMES.indexOf(name) === -1) name = THEMES[0];
-
-      /* Gold is the default and lives on :root itself, so it is the
-         absence of the attribute rather than a value of it. */
-      if (name === THEMES[0]) {
-        document.documentElement.removeAttribute('data-theme');
-      } else {
-        document.documentElement.setAttribute('data-theme', name);
-      }
-
-      themeBtns.forEach(function (b) {
-        b.setAttribute('aria-pressed', String(b.dataset.themeSet === name));
-      });
-
-      if (!remember) return;
-      /* Safari in private mode throws on write, and the theme still
-         applies for this visit, so a failure here is not worth
-         interrupting anything for. */
-      try { localStorage.setItem('theme', name); } catch (e) {}
-    };
-
-    themeBtns.forEach(function (b) {
-      b.addEventListener('click', function () {
-        applyTheme(b.dataset.themeSet, true);
-      });
-    });
-
-    /* The markup ships with gold pressed. Read the stored value back
-       and re-run, so the dots agree with what <head> already did. */
-    var savedTheme = null;
-    try { savedTheme = localStorage.getItem('theme'); } catch (e) {}
-    applyTheme(savedTheme || THEMES[0], false);
-  }
-
   /* Hero portrait: show the placeholder if the file is missing */
   var me = document.getElementById('me');
   if (me) {
