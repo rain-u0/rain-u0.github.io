@@ -111,6 +111,8 @@ const PHOTOS = [
     t: { zh: '花瓣之下', en: 'Under the Petals', ja: '花びらの下で', ko: '꽃잎 아래에서' } },
   { file: 'sundown', cat: 'mood', w: 1000, h: 1600, demo: true,
     t: { zh: '日落', en: 'Sundown', ja: '日暮れ', ko: '해 질 무렵' } },
+  { file: 'evening_blue_by_the_sea', cat: 'mood', w: 922, h: 1600, demo: true,
+    t: { zh: '海邊晚藍', en: 'Evening Blue by the Sea', ja: '海辺の夕藍', ko: '바다의 저녁빛' } },
   { file: 'stone_steps', cat: 'mood', w: 980, h: 1600, demo: true,
     t: { zh: '芒草石階', en: 'Stone Steps', ja: 'ススキの石段', ko: '억새 돌계단' } },
   { file: 'you_are_the_sunset', cat: 'mood', w: 985, h: 1600, demo: true,
