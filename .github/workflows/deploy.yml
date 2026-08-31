@@ -1,0 +1,74 @@
+# Build the four language pages, then publish.
+#
+# Until now index*.html were generated on a laptop and committed. That
+# works until someone edits template.html or i18n/strings.json and
+# forgets to run the build — the site then serves markup that no longer
+# matches its source, with nothing to say so. Running the generator here
+# makes that impossible: whatever is deployed was built from what is in
+# the repo, every time.
+#
+# It is also what lets the admin page work. That page edits only source
+# files; something has to turn them back into pages, and it cannot be a
+# script on a laptop that may be closed.
+name: Build and deploy
+
+on:
+  push:
+    branches: [main]
+  # so a deploy can be re-run from the Actions tab without a commit
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race. Queue rather than cancel: a run that is
+# already partway through is still a legitimate version of the site.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      # Aborts on a missing translation, an undefined key, or a key
+      # defined and never used — so a broken edit fails here rather
+      # than shipping.
+      - name: Generate the language pages
+        run: python3 tools/build.py
+
+      # Assembled explicitly rather than uploading the whole checkout:
+      # template.html, i18n/ and tools/ are inputs to the build, not
+      # things a visitor should be served.
+      - name: Assemble the site
+        run: |
+          mkdir _site
+          cp index.html index-en.html index-ja.html index-ko.html _site/
+          cp -r css js images _site/
+          echo "--- deploying ---"
+          find _site -maxdepth 1 -mindepth 1 | sort
+          echo "total: $(du -sh _site | cut -f1)"
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
