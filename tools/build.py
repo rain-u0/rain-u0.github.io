@@ -48,7 +48,14 @@ LANGS = ["zh", "en", "ja", "ko"]
 # A content hash in the query string means changed asset, new URL, so
 # the two can never be paired. An unchanged asset keeps its hash and
 # stays cached.
-ASSETS = ["css/style.css", "js/photos.js", "js/main.js"]
+SITE_ASSETS  = ["css/style.css", "js/photos.js", "js/main.js"]
+ADMIN_ASSETS = ["css/admin.css", "js/admin.js"]
+
+# admin.html is not generated from the template — it has one operator and
+# no translations — but it needs the same treatment for a sharper reason.
+# Stale CSS on the site is a broken layout; stale admin.js is older code
+# writing to js/photos.js, which corrupts data rather than appearance.
+ADMIN_PAGE = "admin.html"
 
 # Which file each language writes to. zh keeps the bare name so the
 # default URL stays clean.
@@ -128,10 +135,14 @@ def build(template, strings, lang):
                         block + '  <script src="js/photos.js"></script>')
 
     # Last, so the two replacements above still match plain filenames
-    for rel in ASSETS:
+    return fingerprint(page, SITE_ASSETS)
+
+
+def fingerprint(page, assets):
+    """Stamp each asset URL with a hash of that asset's contents."""
+    for rel in assets:
         digest = hashlib.sha256((ROOT / rel).read_bytes()).hexdigest()[:10]
         page = page.replace('"' + rel + '"', '"' + rel + '?v=' + digest + '"')
-
     return page
 
 
@@ -149,5 +160,15 @@ for lang in LANGS:
     path = ROOT / OUT[lang]
     path.write_text(build(template, strings, lang), encoding="utf-8")
     print(f"  {OUT[lang]:18} {lang}")
+
+# Rewritten in place: it is a source file, not a generated one, so this
+# only ever swaps one query string for another.
+admin = ROOT / ADMIN_PAGE
+if admin.exists():
+    before = admin.read_text(encoding="utf-8")
+    after = fingerprint(re.sub(r'\?v=[0-9a-f]{10}"', '"', before), ADMIN_ASSETS)
+    if after != before:
+        admin.write_text(after, encoding="utf-8")
+    print(f"  {ADMIN_PAGE:18} assets stamped")
 
 print(f"\n{len(LANGS)} pages written.")

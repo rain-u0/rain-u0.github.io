@@ -241,3 +241,107 @@ button, input, select { font-family: inherit; font-size: inherit; color: inherit
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 .toast.is-bad { border-color: var(--danger); color: var(--danger); }
 .toast.is-ok  { border-color: var(--ok); }
+
+/* ── Row delete ───────────────────────────────────────────── */
+.row__del {
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+  background: transparent;
+  color: var(--fg-faint);
+  cursor: pointer;
+  transition: color 0.25s var(--ease), border-color 0.25s var(--ease);
+}
+.row__del:hover { color: var(--danger); border-color: var(--danger); }
+
+/* A row staged for deletion stays visible until the save that carries
+   it out, so the change can still be reconsidered by reloading. */
+.row.is-new { border-color: var(--ok); }
+
+/* ── Add-a-photo sheet ────────────────────────────────────── */
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: clamp(1rem, 5vh, 3rem) 1rem;
+  overflow-y: auto;
+  background: rgb(8 9 12 / 0.72);
+  backdrop-filter: blur(6px);
+}
+.sheet[hidden] { display: none; }
+
+.sheet__box {
+  width: 100%;
+  max-width: 46rem;
+  padding: clamp(1.1rem, 3vw, 1.8rem);
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.6);
+}
+
+.sheet__title { margin: 0 0 1.1rem; font-size: 1.1rem; font-weight: 400; letter-spacing: 0.05em; }
+
+.drops { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+@media (max-width: 560px) { .drops { grid-template-columns: 1fr; } }
+
+.drop {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.7rem;
+  border: 1px dashed var(--fg-faint);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: border-color 0.25s var(--ease), background 0.25s var(--ease);
+}
+.drop:hover, .drop.is-over { border-color: var(--accent); background: rgb(201 162 39 / 0.05); }
+.drop.is-set { border-style: solid; border-color: var(--ok); }
+
+.drop__slot {
+  display: block;
+  aspect-ratio: 2 / 3;
+  max-height: 15rem;
+  border-radius: 0.35rem;
+  background: var(--bg) center / contain no-repeat;
+}
+.drop__cap { font-size: 0.8rem; color: var(--fg-dim); text-align: center; }
+.drop.is-set .drop__cap { color: var(--ok); }
+
+.sheet__hint { margin: 0.6rem 0 1.2rem; color: var(--fg-faint); font-size: 0.78rem; line-height: 1.7; }
+
+.sheet__row { margin-bottom: 1rem; }
+.sheet__lab { display: block; margin-bottom: 0.35rem; color: var(--fg-dim); font-size: 0.8rem; }
+
+#new-name {
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+  letter-spacing: 0.03em;
+}
+#new-name:focus { outline: none; border-color: var(--fg-faint); }
+#new-name.is-bad { border-color: var(--danger); }
+
+.sheet__note { margin: 0.35rem 0 0; font-size: 0.75rem; color: var(--fg-faint); min-height: 1.2em; }
+.sheet__note.is-bad { color: var(--danger); }
+
+#new-cat { width: 100%; }
+
+.sheet__err {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--danger);
+  border-radius: 0.4rem;
+  color: var(--danger);
+  font-size: 0.85rem;
+}
+.sheet__err[hidden] { display: none; }
+
+.sheet__actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+
+.sheet__dim { color: var(--fg-faint); }

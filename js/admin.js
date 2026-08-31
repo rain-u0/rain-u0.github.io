@@ -60,6 +60,96 @@
     return btoa(bin);
   }
 
+  /* ── Images ────────────────────────────────────────────────
+     What tools/optimize.sh does on a laptop, done here instead. Not a
+     port of it: sips and qlmanage are macOS binaries and no browser
+     has an equivalent, so this reaches the same four requirements —
+     JPEG, long edge capped, orientation applied, dimensions known —
+     by different means, and the bytes it produces will not match.
+
+     HEIC is refused rather than decoded. Doing it in a browser costs a
+     two-megabyte WebAssembly decoder for a case that mostly does not
+     arise: phones convert on upload, and the laptop script handles the
+     originals natively. Saying so plainly beats failing quietly. */
+  var MAX_EDGE = 1600;
+  var JPEG_QUALITY = 0.82;
+  var ACCEPT_EXT = /\.(jpe?g|png|webp)$/i;
+  var ACCEPT_LABEL = 'JPG, PNG or WebP';
+
+  function checkType(file) {
+    if (ACCEPT_EXT.test(file.name)) return null;
+    if (/\.hei[cf]$/i.test(file.name)) {
+      return file.name + ' is HEIC, which browsers cannot read. ' +
+             'Convert it first, or add it with tools/optimize.sh.';
+    }
+    return file.name + ' is not a supported format. Use ' + ACCEPT_LABEL + '.';
+  }
+
+  /* Same rules as the shell script: lower case, ASCII only, and the
+     result must be non-empty — a name with no ASCII in it at all
+     sanitises to nothing, which is a rename request, not a filename. */
+  function sanitize(name) {
+    return name.replace(/\.[^.]+$/, '')
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9_]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+  }
+
+  function processImage(file) {
+    /* Decoded once. Calling createImageBitmap twice on the same blob —
+       once to measure, once to resize — leaves the second call pending
+       forever, and a promise that never settles cannot be caught: the
+       upload simply stops with no error to show. So measure and resize
+       from the one bitmap.
+
+       Reducing in halves rather than in a single draw. Canvas samples
+       a fixed neighbourhood, so taking 3800px down to 1600px in one
+       step skips most of the pixels and aliases; halving until the
+       last step is under 2x keeps them. */
+    return createImageBitmap(file, { imageOrientation: 'from-image' })
+      .then(function (src) {
+        var scale = Math.min(1, MAX_EDGE / Math.max(src.width, src.height));
+        var w = Math.round(src.width * scale);
+        var h = Math.round(src.height * scale);
+
+        var from = src, fw = src.width, fh = src.height;
+        while (fw > w * 2) {
+          fw = Math.max(w, Math.round(fw / 2));
+          fh = Math.max(h, Math.round(fh / 2));
+          from = draw(from, fw, fh);
+        }
+
+        var out = draw(from, w, h);
+        return new Promise(function (resolve, reject) {
+          out.toBlob(function (blob) {
+            if (blob) resolve({ blob: blob, w: w, h: h });
+            else reject(new Error('could not encode ' + file.name));
+          }, 'image/jpeg', JPEG_QUALITY);
+        });
+      });
+  }
+
+  function draw(source, w, h) {
+    var c = document.createElement('canvas');
+    c.width = w;
+    c.height = h;
+    var ctx = c.getContext('2d');
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(source, 0, 0, w, h);
+    return c;
+  }
+
+  function blobToB64(blob) {
+    return new Promise(function (resolve, reject) {
+      var fr = new FileReader();
+      fr.onload = function () { resolve(String(fr.result).split(',')[1]); };
+      fr.onerror = function () { reject(new Error('could not read blob')); };
+      fr.readAsDataURL(blob);
+    });
+  }
+
   /* ── GitHub API ───────────────────────────────────────────── */
   function api(path, opts) {
     opts = opts || {};
@@ -91,16 +181,73 @@
       });
   }
 
-  function putFile(path, text, sha, message) {
-    return api('/repos/' + REPO + '/contents/' + path, {
-      method: 'PUT',
-      body: JSON.stringify({
-        message: message,
-        content: encodeB64(text),
-        sha: sha,
-        branch: BRANCH
+  /* ── Committing ────────────────────────────────────────────
+     Writes go through the git data API rather than the contents API,
+     which can only touch one file per call. Adding a photo is three
+     files — the image, the wallpaper shot, and the row that points at
+     them — and three separate calls means three commits and a window
+     in which two of them have landed and the third has not. Here the
+     whole change is one tree and one commit, or it is nothing.
+
+     The parent is the head as it was when this page loaded, so a push
+     from anywhere else in between makes this commit a non-fast-forward
+     and GitHub refuses it. That is the conflict check: it is enforced
+     by the server, not by us remembering to look. */
+  function getHead() {
+    return api('/repos/' + REPO + '/git/ref/heads/' + BRANCH + '?t=' + Date.now())
+      .then(function (r) { return r.object.sha; });
+  }
+
+  function commit(writes, deletes, message) {
+    var parent = state.head;
+
+    return api('/repos/' + REPO + '/git/commits/' + parent)
+      .then(function (c) {
+        var baseTree = c.tree.sha;
+
+        /* Blobs first: a tree entry needs a sha, and base64 is the only
+           encoding that survives a JPEG intact. */
+        return Promise.all(writes.map(function (w) {
+          return api('/repos/' + REPO + '/git/blobs', {
+            method: 'POST',
+            body: JSON.stringify({
+              content: w.b64 != null ? w.b64 : encodeB64(w.text),
+              encoding: 'base64'
+            })
+          }).then(function (b) {
+            return { path: w.path, mode: '100644', type: 'blob', sha: b.sha };
+          });
+        })).then(function (entries) {
+          /* A null sha on an existing path is how the tree API spells
+             deletion. */
+          (deletes || []).forEach(function (path) {
+            entries.push({ path: path, mode: '100644', type: 'blob', sha: null });
+          });
+          return api('/repos/' + REPO + '/git/trees', {
+            method: 'POST',
+            body: JSON.stringify({ base_tree: baseTree, tree: entries })
+          });
+        });
       })
-    });
+      .then(function (tree) {
+        return api('/repos/' + REPO + '/git/commits', {
+          method: 'POST',
+          body: JSON.stringify({
+            message: message,
+            tree: tree.sha,
+            parents: [parent]
+          })
+        });
+      })
+      .then(function (c) {
+        return api('/repos/' + REPO + '/git/refs/heads/' + BRANCH, {
+          method: 'PATCH',
+          body: JSON.stringify({ sha: c.sha })   /* force defaults to false */
+        }).then(function () {
+          state.head = c.sha;
+          return c;
+        });
+      });
   }
 
   /* ── Parsing ───────────────────────────────────────────────
@@ -173,17 +320,23 @@
   function loadAll() {
     setState('Loading…');
     return Promise.all([
+      getHead(),
       getFile('js/photos.js'),
       getFile('template.html'),
       getFile('i18n/strings.json')
     ]).then(function (r) {
-      var photosFile = r[0], tpl = r[1], strings = r[2];
+      var head = r[0], photosFile = r[1], tpl = r[2], strings = r[3];
       var text = photosFile.text;
       var cut = text.indexOf('const PHOTOS = [');
 
       state = {
         photos: parsePhotos(text),
-        sha:    photosFile.sha,
+        head:   head,
+        /* Images processed in this session but not yet committed, and
+           images the next save should remove. Both ride along with the
+           photos.js write so the tree is never half-updated. */
+        pending: {},
+        removed: [],
         cats:   parseCats(tpl.text, JSON.parse(strings.text)),
         descs:  parseDescs(text),
         header: text.slice(0, cut + 'const PHOTOS = ['.length),
@@ -243,9 +396,14 @@
 
     r.appendChild(el('div', 'row__grip', '⠿'));
 
+    var pend = state.pending[p.file];
+    if (pend) r.classList.add('is-new');
+
     var img = document.createElement('img');
     img.className = 'row__thumb';
-    img.src = 'images/' + p.file + '.jpg';
+    /* A pending photo is not on the site yet, so its thumbnail has to
+       come from the blob in memory rather than a URL that 404s. */
+    img.src = pend ? pend.preview : 'images/' + p.file + '.jpg';
     img.alt = '';
     img.loading = 'lazy';
     r.appendChild(img);
@@ -278,7 +436,10 @@
     state.cats.forEach(function (c) {
       var o = document.createElement('option');
       o.value = c.key;
-      o.textContent = c.t.zh;
+      /* The key, not a name: this picker sets p.cat, and showing the
+         value it sets leaves nothing to infer. The heading above the
+         block carries the four names for anyone who needs them. */
+      o.textContent = c.key;
       if (c.key === p.cat) o.selected = true;
       sel.appendChild(o);
     });
@@ -293,6 +454,25 @@
       render();
     });
     side.appendChild(sel);
+
+    var del = el('button', 'row__del', 'Delete');
+    del.type = 'button';
+    del.addEventListener('click', function () {
+      if (!confirm('Delete ' + p.file + '? Both its images go too.\n\n' +
+                   'Nothing happens until you save.')) return;
+      state.photos.splice(state.photos.indexOf(p), 1);
+      if (state.pending[p.file]) {
+        /* Never committed, so there is nothing to delete — just drop it */
+        delete state.pending[p.file];
+      } else {
+        state.removed.push('images/' + p.file + '.jpg',
+                           'images/' + p.file + '_demo.jpg');
+      }
+      setDirty(true);
+      render();
+    });
+    side.appendChild(del);
+
     r.appendChild(side);
 
     wireDrag(r, p);
@@ -344,6 +524,22 @@
     return bad;
   }
 
+  /* Say what the commit did, since one save can add, remove and edit
+     in the same breath and "update the gallery" tells a later reader
+     nothing. */
+  function commitMessage(imageCount) {
+    var bits = [];
+    var added = Object.keys(state.pending).length;
+    if (added) bits.push('add ' + added + ' photo' + (added > 1 ? 's' : ''));
+    if (state.removed.length) {
+      bits.push('remove ' + (state.removed.length / 2) + ' photo' +
+                (state.removed.length > 2 ? 's' : ''));
+    }
+    if (!bits.length) return 'Update the gallery from the admin page';
+    return bits.join(', ').replace(/^./, function (c) { return c.toUpperCase(); }) +
+           ' from the admin page';
+  }
+
   function save() {
     var bad = validate();
     if (bad.length) {
@@ -357,24 +553,213 @@
     $('save').disabled = true;
     setState('Saving…');
 
-    putFile('js/photos.js', serialize(), state.sha,
-            'Update the gallery from the admin page')
-      .then(function (res) {
-        state.sha = res.content.sha;      /* so a second save still works */
+    var writes = [{ path: 'js/photos.js', text: serialize() }];
+    Object.keys(state.pending).forEach(function (file) {
+      var p = state.pending[file];
+      writes.push({ path: 'images/' + file + '.jpg',      b64: p.photoB64 });
+      writes.push({ path: 'images/' + file + '_demo.jpg', b64: p.demoB64 });
+    });
+
+    commit(writes, state.removed, commitMessage(writes.length - 1))
+      .then(function () {
+        state.pending = {};
+        state.removed = [];
         setDirty(false);
         setState('');
+        render();
         toast('Saved. The site updates in about a minute.', 'ok');
       })
       .catch(function (e) {
         setState('');
         $('save').disabled = false;
-        if (e.status === 409) {
+        /* 409 from the contents API, 422 from a non-fast-forward ref
+           update — the same situation reported two ways. */
+        if (e.status === 409 || e.status === 422) {
           toast('Save rejected: the repo changed since this page loaded. ' +
                 'Reload to pick up the new version, then redo the edit.', 'bad', 0);
         } else {
           toast('Save failed: ' + e.message, 'bad', 0);
         }
       });
+  }
+
+  /* ── Add a photo ───────────────────────────────────────────
+     Nothing here touches the repo. The sheet processes both images,
+     puts a row in the list and parks the JPEGs in state.pending; the
+     save that follows is what writes them, in the same commit as the
+     row that refers to them. */
+  var slots = { photo: null, demo: null };
+
+  function resetSheet() {
+    ['photo', 'demo'].forEach(function (k) {
+      if (slots[k]) URL.revokeObjectURL(slots[k].preview);
+      slots[k] = null;
+      var d = $('drop-' + k);
+      d.classList.remove('is-set');
+      d.querySelector('.drop__slot').style.backgroundImage = '';
+      d.querySelector('input').value = '';
+    });
+    $('new-name').value = '';
+    $('new-name').classList.remove('is-bad');
+    $('name-note').textContent = '';
+    $('name-note').classList.remove('is-bad');
+    $('sheet-err').hidden = true;
+
+    var t = $('new-titles');
+    t.textContent = '';
+    LANGS.forEach(function (lang) {
+      var f = el('div', 'field');
+      f.appendChild(el('span', 'field__lang', lang.toUpperCase()));
+      var i = document.createElement('input');
+      i.type = 'text';
+      i.dataset.lang = lang;
+      f.appendChild(i);
+      t.appendChild(f);
+    });
+
+    var sel = $('new-cat');
+    sel.textContent = '';
+    state.cats.forEach(function (c) {
+      var o = document.createElement('option');
+      o.value = c.key;
+      o.textContent = c.key;
+      sel.appendChild(o);
+    });
+  }
+
+  function takeFile(kind, file) {
+    if (!file) return;
+    var bad = checkType(file);
+    if (bad) { sheetErr(bad); return; }
+    sheetErr(null);
+
+    var d = $('drop-' + kind);
+    d.querySelector('.drop__cap').textContent = 'Processing…';
+
+    processImage(file).then(function (out) {
+      return blobToB64(out.blob).then(function (b64) {
+        if (slots[kind]) URL.revokeObjectURL(slots[kind].preview);
+        slots[kind] = {
+          b64: b64, w: out.w, h: out.h,
+          preview: URL.createObjectURL(out.blob),
+          kb: Math.round(out.blob.size / 1024)
+        };
+        d.classList.add('is-set');
+        d.querySelector('.drop__slot').style.backgroundImage =
+          'url("' + slots[kind].preview + '")';
+        d.querySelector('.drop__cap').textContent =
+          (kind === 'photo' ? 'Photo' : 'Wallpaper screenshot') +
+          ' · ' + out.w + '×' + out.h + ' · ' + slots[kind].kb + ' KB';
+
+        /* The name comes off the photo, not the screenshot: the
+           screenshot is named after the photo, never the other way. */
+        if (kind === 'photo' && !$('new-name').value) {
+          $('new-name').value = sanitize(file.name);
+          checkName();
+        }
+      });
+    }).catch(function (e) {
+      d.querySelector('.drop__cap').textContent =
+        kind === 'photo' ? 'Photo' : 'Wallpaper screenshot';
+      sheetErr('Could not process ' + file.name + ': ' + e.message);
+    });
+  }
+
+  function checkName() {
+    var raw = $('new-name').value;
+    var clean = sanitize(raw);
+    var note = $('name-note'), input = $('new-name');
+    var problem = null;
+
+    if (!raw.trim()) {
+      problem = null;                       /* not filled in yet */
+    } else if (!clean) {
+      problem = 'That name has no letters or digits a URL can carry. ' +
+                'GitHub Pages matches paths byte for byte — use English.';
+    } else if (state.photos.some(function (p) { return p.file === clean; })) {
+      problem = clean + ' already exists.';
+    }
+
+    input.classList.toggle('is-bad', !!problem);
+    note.classList.toggle('is-bad', !!problem);
+    note.textContent = problem ||
+      (clean ? 'images/' + clean + '.jpg and images/' + clean + '_demo.jpg' : '');
+    return problem ? null : clean;
+  }
+
+  function sheetErr(msg) {
+    $('sheet-err').textContent = msg || '';
+    $('sheet-err').hidden = !msg;
+  }
+
+  function addPhoto() {
+    if (!slots.photo || !slots.demo) {
+      sheetErr('Both the photo and its wallpaper screenshot are required.');
+      return;
+    }
+    var file = checkName();
+    if (!file) {
+      sheetErr($('new-name').value.trim()
+        ? 'Fix the file name first.' : 'A file name is required.');
+      return;
+    }
+    var t = {}, missing = [];
+    $('new-titles').querySelectorAll('input').forEach(function (i) {
+      t[i.dataset.lang] = i.value.trim();
+      if (!i.value.trim()) missing.push(i.dataset.lang.toUpperCase());
+    });
+    if (missing.length) {
+      sheetErr('Missing ' + missing.join(', ') + '. All four are required — ' +
+               'a blank one renders an untitled tile on that language.');
+      return;
+    }
+
+    var photo = {
+      file: file,
+      cat: $('new-cat').value,
+      w: slots.photo.w,
+      h: slots.photo.h,
+      demo: true,
+      t: t
+    };
+    state.pending[file] = {
+      photoB64: slots.photo.b64,
+      demoB64:  slots.demo.b64,
+      preview:  slots.photo.preview
+    };
+    slots.photo = null;          /* the preview URL now belongs to the row */
+    state.photos.push(photo);
+
+    setDirty(true);
+    render();
+    $('sheet').hidden = true;
+    toast('Added ' + file + '. Save to publish it.', 'ok');
+  }
+
+  function wireDrops() {
+    ['photo', 'demo'].forEach(function (kind) {
+      var d = $('drop-' + kind);
+      var input = d.querySelector('input');
+      input.addEventListener('change', function () { takeFile(kind, input.files[0]); });
+      d.addEventListener('dragover', function (e) {
+        e.preventDefault(); d.classList.add('is-over');
+      });
+      d.addEventListener('dragleave', function () { d.classList.remove('is-over'); });
+      d.addEventListener('drop', function (e) {
+        e.preventDefault();
+        d.classList.remove('is-over');
+        takeFile(kind, e.dataTransfer.files[0]);
+      });
+    });
+    $('new-name').addEventListener('input', checkName);
+    $('sheet-add').addEventListener('click', addPhoto);
+    $('sheet-cancel').addEventListener('click', function () { $('sheet').hidden = true; });
+    $('sheet').addEventListener('click', function (e) {
+      if (e.target === $('sheet')) $('sheet').hidden = true;
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !$('sheet').hidden) $('sheet').hidden = true;
+    });
   }
 
   /* ── Chrome ───────────────────────────────────────────────── */
@@ -437,6 +822,11 @@
     });
   });
 
+  wireDrops();
+  $('add').addEventListener('click', function () {
+    resetSheet();
+    $('sheet').hidden = false;
+  });
   $('save').addEventListener('click', save);
   $('logout').addEventListener('click', signOut);
   $('reload').addEventListener('click', function () {

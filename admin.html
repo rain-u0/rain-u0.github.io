@@ -22,7 +22,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <title>rain_u.0 — Admin</title>
-  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/admin.css?v=ccaf5f1fdd">
 </head>
 <body>
 
@@ -58,6 +58,7 @@
       </div>
       <div class="bar__right">
         <span class="bar__state" id="state"></span>
+        <button type="button" id="add" class="btn btn--ghost">Add photo</button>
         <button type="button" id="reload" class="btn btn--ghost">Reload</button>
         <button type="button" id="save" class="btn btn--go" disabled>Save</button>
         <button type="button" id="logout" class="btn btn--ghost">Sign out</button>
@@ -68,8 +69,61 @@
     <div class="groups" id="groups"></div>
   </main>
 
+  <!-- ── Add a photo ─────────────────────────────────────────
+       Two drop zones rather than one that pairs by filename: the
+       names are generated from the field below, so the only way to
+       get the pair the wrong way round is to drop them in the wrong
+       boxes — which the previews sitting side by side make visible.
+       Both are required; a photo without its wallpaper shot would
+       ship a toggle that does nothing. -->
+  <div class="sheet" id="sheet" hidden>
+    <div class="sheet__box" role="dialog" aria-modal="true" aria-label="Add a photo">
+      <h2 class="sheet__title">Add a photo</h2>
+
+      <div class="drops">
+        <label class="drop" id="drop-photo">
+          <input type="file" accept=".jpg,.jpeg,.png,.webp" hidden>
+          <span class="drop__slot"></span>
+          <span class="drop__cap">Photo</span>
+        </label>
+        <label class="drop" id="drop-demo">
+          <input type="file" accept=".jpg,.jpeg,.png,.webp" hidden>
+          <span class="drop__slot"></span>
+          <span class="drop__cap">Wallpaper screenshot</span>
+        </label>
+      </div>
+      <p class="sheet__hint">
+        Drop or click. JPG, PNG or WebP — HEIC cannot be read in a browser.
+        Both are required.
+      </p>
+
+      <div class="sheet__row">
+        <label class="sheet__lab" for="new-name">File name</label>
+        <input type="text" id="new-name" spellcheck="false" autocomplete="off">
+        <p class="sheet__note" id="name-note"></p>
+      </div>
+
+      <div class="sheet__row">
+        <span class="sheet__lab">Titles</span>
+        <div class="titles" id="new-titles"></div>
+      </div>
+
+      <div class="sheet__row">
+        <label class="sheet__lab" for="new-cat">Category <span class="sheet__dim">— the cat value in photos.js</span></label>
+        <select id="new-cat" class="row__cat"></select>
+      </div>
+
+      <p class="sheet__err" id="sheet-err" hidden></p>
+
+      <div class="sheet__actions">
+        <button type="button" id="sheet-cancel" class="btn btn--ghost">Cancel</button>
+        <button type="button" id="sheet-add" class="btn btn--go">Add to the list</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast" hidden></div>
 
-  <script src="js/admin.js"></script>
+  <script src="js/admin.js?v=6627d595d1"></script>
 </body>
 </html>
