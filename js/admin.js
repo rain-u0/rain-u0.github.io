@@ -25,7 +25,6 @@
   var REPO   = 'rain-u0/rain-u0.github.io';
   var BRANCH = 'main';
   var API    = 'https://api.github.com';
-  var LS_KEY = 'rain-u0-admin-token';
   var LANGS  = ['zh', 'en', 'ja', 'ko'];
 
   /* Width the category rules in js/photos.js are padded to. Matching
@@ -122,7 +121,13 @@
     while ((m = re.exec(templateText))) {
       if (m[1] === 'all') continue;          /* not a category */
       var entry = strings['filter.' + m[1]];
-      out.push({ key: m[1], label: entry ? entry.zh : m[1] });
+      /* English to match this page; the Chinese rides along because
+         that is the label on the site the operator actually looks at. */
+      out.push({
+        key:   m[1],
+        label: entry ? entry.en : m[1],
+        zh:    entry ? entry.zh : ''
+      });
     }
     return out;
   }
@@ -165,7 +170,7 @@
 
   /* ── Load ─────────────────────────────────────────────────── */
   function loadAll() {
-    setState('載入中…');
+    setState('Loading…');
     return Promise.all([
       getFile('js/photos.js'),
       getFile('template.html'),
@@ -188,7 +193,8 @@
          bytes. If it does not, the writer and the file have drifted
          and saving would rewrite far more than the operator edited. */
       if (serialize() !== text) {
-        toast('警告：重新產生的檔案與原檔不符，儲存前請先告知開發者', 'bad', 0);
+        toast('Warning: regenerating this file does not reproduce it. ' +
+              'Saving would rewrite more than you edited — do not save.', 'bad', 0);
       }
 
       setDirty(false);
@@ -208,16 +214,17 @@
       var sec = el('section', 'group');
       var head = el('div', 'group__head');
       head.appendChild(el('span', 'group__name', cat.label));
-      head.appendChild(el('span', 'group__key', cat.key));
-      head.appendChild(el('span', 'group__n', list.length + ' 張'));
+      head.appendChild(el('span', 'group__key',
+        (cat.zh ? cat.zh + ' · ' : '') + cat.key));
+      head.appendChild(el('span', 'group__n', list.length));
       sec.appendChild(head);
 
       list.forEach(function (p) { sec.appendChild(row(p, cat.key)); });
       wrap.appendChild(sec);
     });
 
-    $('count').textContent = state.photos.length + ' 張照片 · ' +
-                             state.cats.length + ' 個分類';
+    $('count').textContent = state.photos.length + ' photos · ' +
+                             state.cats.length + ' categories';
   }
 
   function el(tag, cls, text) {
@@ -339,14 +346,15 @@
   function save() {
     var bad = validate();
     if (bad.length) {
-      toast('有 ' + bad.length + ' 張照片的標題未填滿：' +
-            bad.slice(0, 3).map(function (p) { return p.file; }).join('、') +
-            (bad.length > 3 ? ' 等' : ''), 'bad');
+      toast(bad.length + ' photo' + (bad.length > 1 ? 's are' : ' is') +
+            ' missing a title: ' +
+            bad.slice(0, 3).map(function (p) { return p.file; }).join(', ') +
+            (bad.length > 3 ? ' and others' : ''), 'bad');
       return;
     }
 
     $('save').disabled = true;
-    setState('儲存中…');
+    setState('Saving…');
 
     putFile('js/photos.js', serialize(), state.sha,
             'Update the gallery from the admin page')
@@ -354,15 +362,16 @@
         state.sha = res.content.sha;      /* so a second save still works */
         setDirty(false);
         setState('');
-        toast('已儲存，網站約一分鐘後更新', 'ok');
+        toast('Saved. The site updates in about a minute.', 'ok');
       })
       .catch(function (e) {
         setState('');
         $('save').disabled = false;
         if (e.status === 409) {
-          toast('儲存失敗：repo 已被其他地方修改。請按「重新載入」取得最新版再改一次。', 'bad', 0);
+          toast('Save rejected: the repo changed since this page loaded. ' +
+                'Reload to pick up the new version, then redo the edit.', 'bad', 0);
         } else {
-          toast('儲存失敗：' + e.message, 'bad', 0);
+          toast('Save failed: ' + e.message, 'bad', 0);
         }
       });
   }
@@ -371,7 +380,7 @@
   function setDirty(v) {
     dirty = v;
     $('save').disabled = !v;
-    $('state').textContent = v ? '有未儲存的變更' : '';
+    $('state').textContent = v ? 'Unsaved changes' : '';
     $('state').classList.toggle('is-dirty', v);
   }
 
@@ -393,24 +402,20 @@
     }
   }
 
-  function signIn(t, remember) {
+  function signIn(t) {
     token = t;
     /* Prove the token before showing anything: a bad one should fail
        here, not on the first save after ten minutes of editing. */
     return api('/repos/' + REPO).then(function () {
-      if (remember) {
-        try { localStorage.setItem(LS_KEY, t); } catch (e) {}
-      }
       $('gate').hidden = true;
       $('app').hidden = false;
       return loadAll();
     });
   }
 
-  function signOut() {
-    try { localStorage.removeItem(LS_KEY); } catch (e) {}
-    location.reload();
-  }
+  /* Nothing to clear but the tab itself — the token was never
+     written anywhere. Reloading guarantees a clean slate. */
+  function signOut() { location.reload(); }
 
   /* ── Wire up ──────────────────────────────────────────────── */
   $('gate-form').addEventListener('submit', function (e) {
@@ -419,13 +424,14 @@
     if (!t) return;
     $('gate-go').disabled = true;
     $('gate-err').hidden = true;
-    signIn(t, $('remember').checked).catch(function (err) {
+    signIn(t).catch(function (err) {
       $('gate-go').disabled = false;
       $('gate-err').textContent = err.status === 401
-        ? 'Token 無效或已撤銷'
+        ? 'That token is invalid or has been revoked.'
         : (err.status === 404
-            ? 'Token 有效，但沒有這個 repo 的權限'
-            : ('登入失敗：' + err.message));
+            ? 'The token is valid but cannot see this repository. Check its ' +
+              'repository access and that Contents is set to read and write.'
+            : ('Sign-in failed: ' + err.message));
       $('gate-err').hidden = false;
     });
   });
@@ -433,22 +439,13 @@
   $('save').addEventListener('click', save);
   $('logout').addEventListener('click', signOut);
   $('reload').addEventListener('click', function () {
-    if (dirty && !confirm('有未儲存的變更，重新載入會丟失。要繼續嗎？')) return;
+    if (dirty && !confirm('You have unsaved changes. Reloading discards them. Continue?')) return;
     setDirty(false);
-    loadAll().catch(function (e) { toast('載入失敗：' + e.message, 'bad', 0); });
+    loadAll().catch(function (e) { toast('Load failed: ' + e.message, 'bad', 0); });
   });
 
   window.addEventListener('beforeunload', function (e) {
     if (dirty) { e.preventDefault(); e.returnValue = ''; }
   });
 
-  /* Remembered token: try it, but fall back to the form rather than
-     stranding the operator on a blank screen if it was revoked. */
-  var saved = null;
-  try { saved = localStorage.getItem(LS_KEY); } catch (e) {}
-  if (saved) {
-    signIn(saved, false).catch(function () {
-      try { localStorage.removeItem(LS_KEY); } catch (e) {}
-    });
-  }
 })();
