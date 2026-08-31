@@ -22,7 +22,7 @@
 const PHOTOS = [
   // ── linger — drinks, desserts, tables ────────────────────
   { file: 'a_cup_of_rose', cat: 'linger', w: 2400, h: 3200, demo: true,
-    t: { zh: '玫瑰一杯', en: 'A Cup of Rose', ja: '薔薇の一杯', ko: '장미의 한 잔' } },
+    t: { zh: '玫瑰一杯Q', en: 'A Cup of RoseQ', ja: '薔薇の一杯Q', ko: '장미의 한 잔Q' } },
   { file: 'a_cup_of_fingers', cat: 'linger', w: 2092, h: 3840, demo: true,
     t: { zh: '指尖一杯', en: 'A Cup of Fingers', ja: '指先の一杯', ko: '손끝의 한 잔' } },
   { file: 'blue_frozen_glow', cat: 'linger', w: 1179, h: 2080, demo: true,
