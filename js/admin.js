@@ -76,25 +76,72 @@
   var ACCEPT_EXT = /\.(jpe?g|png|webp)$/i;
   var ACCEPT_LABEL = 'JPG, PNG or WebP';
 
-  function checkType(file) {
+  /* Extension first, because it is instant and usually right. */
+  function checkName_(file) {
     if (ACCEPT_EXT.test(file.name)) return null;
-    if (/\.hei[cf]$/i.test(file.name)) {
-      return file.name + ' is HEIC, which browsers cannot read. ' +
-             'Convert it first, or add it with tools/optimize.sh.';
-    }
+    if (/\.hei[cf]$/i.test(file.name)) return heicMsg(file.name);
     return file.name + ' is not a supported format. Use ' + ACCEPT_LABEL + '.';
   }
 
-  /* Same rules as the shell script: lower case, ASCII only, and the
-     result must be non-empty — a name with no ASCII in it at all
-     sanitises to nothing, which is a rename request, not a filename. */
+  function heicMsg(name) {
+    return name + ' is HEIC, which browsers cannot read. Convert it ' +
+           'first, or add it with tools/optimize.sh, which handles HEIC ' +
+           'natively.';
+  }
+
+  /* Then the bytes, because the extension is a claim and not always a
+     true one. A HEIC renamed to .jpg passes the check above and then
+     fails to decode with nothing useful to say; the container tells
+     the truth. Both formats announce themselves in the first dozen
+     bytes: JPEG with FF D8 FF, and the ISO base media family — which
+     HEIC belongs to — with "ftyp" at offset 4 and its brand after. */
+  function sniff(file) {
+    return file.slice(0, 16).arrayBuffer().then(function (buf) {
+      var b = new Uint8Array(buf);
+      var ascii = function (from, to) {
+        return String.fromCharCode.apply(null, b.subarray(from, to));
+      };
+      if (b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF) return null;      /* JPEG */
+      if (ascii(1, 4) === 'PNG') return null;
+      if (ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WEBP') return null;
+      if (ascii(4, 8) === 'ftyp') {
+        var brand = ascii(8, 12);
+        if (/^(heic|heix|hevc|hevx|mif1|msf1)$/.test(brand)) return heicMsg(file.name);
+        return file.name + ' is a ' + brand + ' video or image container, ' +
+               'not a still image. Use ' + ACCEPT_LABEL + '.';
+      }
+      return file.name + ' does not look like ' + ACCEPT_LABEL +
+             ' inside, whatever it is named.';
+    }).catch(function () { return null; });   /* unreadable: let decode decide */
+  }
+
+  /* Same rules as the shell script: lower case, ASCII only. */
   function sanitize(name) {
-    return name.replace(/\.[^.]+$/, '')
-      .normalize('NFKD')
-      .replace(/[\u0300-\u036f]/g, '')
+    return folded(name)
       .toLowerCase()
       .replace(/[^a-z0-9_]+/g, '_')
       .replace(/^_+|_+$/g, '');
+  }
+
+  /* Extension off, accents decomposed and their marks removed, so
+     café becomes cafe rather than caf_. */
+  function folded(name) {
+    return name.replace(/\.[^.]+$/, '')
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
+  /* Characters that survive folding but are not ASCII do not fold —
+     they vanish. "tesr測圖" sanitises to "tesr", which is a valid
+     filename and half the name the operator typed, with nothing to
+     say the other half is gone. Report them rather than silently
+     dropping them; an empty result is the same fault, total. */
+  function droppedFrom(name) {
+    var out = [];
+    folded(name).split('').forEach(function (ch) {
+      if (ch.charCodeAt(0) > 127 && out.indexOf(ch) === -1) out.push(ch);
+    });
+    return out;
   }
 
   function processImage(file) {
@@ -629,14 +676,17 @@
 
   function takeFile(kind, file) {
     if (!file) return;
-    var bad = checkType(file);
+    var bad = checkName_(file);
     if (bad) { sheetErr(bad); return; }
     sheetErr(null);
 
     var d = $('drop-' + kind);
     d.querySelector('.drop__cap').textContent = 'Processing…';
 
-    processImage(file).then(function (out) {
+    sniff(file).then(function (wrong) {
+      if (wrong) throw new Error(wrong);
+      return processImage(file);
+    }).then(function (out) {
       return blobToB64(out.blob).then(function (b64) {
         if (slots[kind]) URL.revokeObjectURL(slots[kind].preview);
         slots[kind] = {
@@ -661,7 +711,11 @@
     }).catch(function (e) {
       d.querySelector('.drop__cap').textContent =
         kind === 'photo' ? 'Photo' : 'Wallpaper screenshot';
-      sheetErr('Could not process ' + file.name + ': ' + e.message);
+      /* sniff already returns a whole sentence; a decode failure does
+         not, and by then the format is the likeliest cause. */
+      sheetErr(/\.$/.test(e.message) ? e.message
+        : 'Could not read ' + file.name + '. If it is not ' +
+          ACCEPT_LABEL + ', convert it first. (' + e.message + ')');
     });
   }
 
@@ -671,11 +725,18 @@
     var note = $('name-note'), input = $('new-name');
     var problem = null;
 
+    var dropped = droppedFrom(raw);
+
     if (!raw.trim()) {
       problem = null;                       /* not filled in yet */
+    } else if (dropped.length) {
+      problem = 'Remove ' + dropped.join(' ') + ' — GitHub Pages matches ' +
+                'paths byte for byte, so a filename has to be ASCII. ' +
+                (clean ? 'Dropping ' + (dropped.length > 1 ? 'them' : 'it') +
+                         ' would leave "' + clean + '".'
+                       : 'Nothing would be left.');
     } else if (!clean) {
-      problem = 'That name has no letters or digits a URL can carry. ' +
-                'GitHub Pages matches paths byte for byte — use English.';
+      problem = 'That name has no letters or digits a URL can carry.';
     } else if (state.photos.some(function (p) { return p.file === clean; })) {
       problem = clean + ' already exists.';
     }
