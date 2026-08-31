@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<!--
+  ═══════════════════════════════════════════════════════════════
+  rain_u.0 — admin
+
+  Edits the repo through the GitHub API. Nothing secret lives in
+  this file: it is a form, and a form is useless without the token
+  the operator pastes at runtime. That token is held in this
+  browser's localStorage and never committed.
+
+  Deliberately not part of the public site's markup. template.html
+  is the generator's input and produces the four language pages;
+  this page stands alone, is not translated, and loads none of the
+  site's own CSS or JS.
+  ═══════════════════════════════════════════════════════════════
+-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>rain_u.0 — 管理</title>
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+  <!-- ── Sign in ─────────────────────────────────────────────
+       Shown until a token proves itself against the API. -->
+  <section class="gate" id="gate">
+    <div class="gate__box">
+      <h1>rain_u.0</h1>
+      <p class="gate__hint">貼上 GitHub personal access token</p>
+
+      <form id="gate-form" autocomplete="off">
+        <input type="password" id="token" placeholder="github_pat_…"
+               spellcheck="false" autocomplete="off" required>
+        <label class="gate__remember">
+          <input type="checkbox" id="remember" checked>
+          <span>在這個瀏覽器記住</span>
+        </label>
+        <button type="submit" id="gate-go">登入</button>
+      </form>
+
+      <p class="gate__err" id="gate-err" hidden></p>
+
+      <p class="gate__note">
+        需要 fine-grained token，範圍限
+        <code>rain-u0.github.io</code>，權限 Contents 讀寫。<br>
+        在公用電腦上請取消勾選「記住」，或用完後登出。
+      </p>
+    </div>
+  </section>
+
+  <!-- ── Editor ──────────────────────────────────────────── -->
+  <main class="app" id="app" hidden>
+    <header class="bar">
+      <div class="bar__left">
+        <strong>rain_u.0</strong>
+        <span class="bar__count" id="count">—</span>
+      </div>
+      <div class="bar__right">
+        <span class="bar__state" id="state"></span>
+        <button type="button" id="reload" class="btn btn--ghost">重新載入</button>
+        <button type="button" id="save" class="btn btn--go" disabled>儲存</button>
+        <button type="button" id="logout" class="btn btn--ghost">登出</button>
+      </div>
+    </header>
+
+    <!-- Filled by js/admin.js: one section per category, rows inside -->
+    <div class="groups" id="groups"></div>
+  </main>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="js/admin.js"></script>
+</body>
+</html>

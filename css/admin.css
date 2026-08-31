@@ -1,0 +1,252 @@
+/* ═══════════════════════════════════════════════════════════════
+   rain_u.0 — admin stylesheet
+
+   Standalone. It borrows the site's palette so the two do not feel
+   like different products, but none of the site's layout: this is a
+   dense editing surface, not a gallery, and the two have almost no
+   shared components.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  --bg:        #0d0e12;
+  --bg-raised: #14161c;
+  --bg-row:    #171a21;
+  --fg:        #e8e6e1;
+  --fg-dim:    #9a978f;
+  --fg-faint:  #5c5a55;
+  --accent:    #c9a227;
+  --line:      rgb(232 230 225 / 0.10);
+  --danger:    #d4644f;
+  --ok:        #6fae6f;
+  --ease:      cubic-bezier(0.16, 0.84, 0.44, 1);
+  --font: "Helvetica Neue", "PingFang TC", "Noto Sans TC", system-ui, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, select { font-family: inherit; font-size: inherit; color: inherit; }
+
+/* ── Sign in ──────────────────────────────────────────────── */
+.gate {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+/* A class with `display` outranks the browser's own [hidden] rule, so
+   setting .hidden on this element would otherwise leave it in place —
+   covering the editor rather than revealing it. */
+.gate[hidden] { display: none; }
+
+.gate__box { width: 100%; max-width: 27rem; }
+.gate__box h1 { font-size: 1.5rem; font-weight: 400; letter-spacing: 0.04em; margin: 0 0 0.3rem; }
+.gate__hint { color: var(--fg-dim); margin: 0 0 1.4rem; }
+
+#token {
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  letter-spacing: 0.04em;
+}
+#token:focus { outline: none; border-color: var(--accent); }
+
+.gate__remember {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.9rem 0 1.2rem;
+  color: var(--fg-dim);
+  cursor: pointer;
+}
+
+#gate-go {
+  width: 100%;
+  padding: 0.75rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: var(--accent);
+  color: #0d0e12;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+#gate-go:disabled { opacity: 0.5; cursor: default; }
+
+.gate__err {
+  margin: 1rem 0 0;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--danger);
+  border-radius: 0.5rem;
+  color: var(--danger);
+}
+.gate__err[hidden] { display: none; }
+
+.gate__note { margin: 1.6rem 0 0; color: var(--fg-faint); font-size: 0.8rem; line-height: 1.8; }
+.gate__note code { color: var(--fg-dim); }
+
+/* ── Top bar ──────────────────────────────────────────────── */
+.app[hidden] { display: none; }
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem clamp(0.8rem, 3vw, 1.6rem);
+  background: rgb(13 14 18 / 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+
+.bar__left { display: flex; align-items: baseline; gap: 0.7rem; }
+.bar__count { color: var(--fg-dim); font-size: 0.85rem; }
+.bar__right { display: flex; align-items: center; gap: 0.5rem; }
+.bar__state { color: var(--fg-dim); font-size: 0.82rem; margin-right: 0.3rem; }
+.bar__state.is-dirty { color: var(--accent); }
+
+.btn {
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.45rem;
+  border: 1px solid var(--line);
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.25s var(--ease), background 0.25s var(--ease);
+}
+.btn:hover { border-color: var(--fg-faint); }
+.btn--go { background: var(--accent); color: #0d0e12; border-color: var(--accent); }
+.btn--go:disabled { opacity: 0.35; cursor: default; }
+.btn--go:not(:disabled):hover { background: #d8b135; }
+
+/* ── Category groups ──────────────────────────────────────── */
+.groups { padding: clamp(0.8rem, 3vw, 1.6rem); max-width: 78rem; margin: 0 auto; }
+
+.group { margin-bottom: 2rem; }
+
+.group__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 0.6rem;
+}
+.group__name { color: var(--accent); letter-spacing: 0.1em; }
+.group__key  { color: var(--fg-faint); font-size: 0.78rem; }
+.group__n    { color: var(--fg-dim); font-size: 0.8rem; margin-left: auto; }
+
+/* ── One photo ────────────────────────────────────────────── */
+.row {
+  display: grid;
+  grid-template-columns: auto 68px 1fr auto;
+  gap: 0.9rem;
+  align-items: start;
+  padding: 0.7rem;
+  margin-bottom: 0.4rem;
+  background: var(--bg-row);
+  border: 1px solid transparent;
+  border-radius: 0.55rem;
+}
+.row.is-over  { border-color: var(--accent); }
+.row.is-drag  { opacity: 0.4; }
+
+.row__grip {
+  cursor: grab;
+  color: var(--fg-faint);
+  padding: 0.3rem 0.2rem;
+  line-height: 1;
+  user-select: none;
+}
+.row__grip:active { cursor: grabbing; }
+
+.row__thumb {
+  width: 68px;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 0.3rem;
+  background: var(--bg-raised);
+}
+
+.row__body { min-width: 0; }
+.row__file {
+  color: var(--fg-faint);
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.45rem;
+  word-break: break-all;
+}
+
+.titles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
+@media (max-width: 900px) { .titles { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .titles { grid-template-columns: 1fr; } }
+
+.field { position: relative; }
+.field input {
+  width: 100%;
+  padding: 0.42rem 0.55rem 0.42rem 2.1rem;
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+}
+.field input:focus { outline: none; border-color: var(--fg-faint); }
+/* Empty is the error state: every language is required, and the row
+   cannot be saved while one is blank. */
+.field input.is-empty { border-color: var(--danger); }
+
+.field__lang {
+  position: absolute;
+  left: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  color: var(--fg-faint);
+  pointer-events: none;
+}
+
+.row__side { display: flex; flex-direction: column; gap: 0.4rem; align-items: stretch; }
+
+.row__cat {
+  padding: 0.42rem 0.5rem;
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+  cursor: pointer;
+}
+
+/* ── Toast ────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.6rem;
+  transform: translate(-50%, 0.5rem);
+  z-index: 50;
+  max-width: min(40rem, 90vw);
+  padding: 0.7rem 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--bg-raised);
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.5);
+  opacity: 0;
+  transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
+}
+.toast[hidden] { display: none; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast.is-bad { border-color: var(--danger); color: var(--danger); }
+.toast.is-ok  { border-color: var(--ok); }
