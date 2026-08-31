@@ -55,6 +55,8 @@ const PHOTOS = [
     t: { zh: '帕斯庫奇焦糖', en: 'Pascucci Caramel', ja: 'パスクッチのキャラメル', ko: '파스쿠찌 카라멜' } },
   { file: 'daegu_slow_turtle', cat: 'linger', w: 915, h: 1600, demo: true,
     t: { zh: '大邱 Slow Turtle', en: 'Slow Turtle, Daegu', ja: '大邱 Slow Turtle', ko: '대구 Slow Turtle' } },
+  { file: 'we', cat: 'linger', w: 326, h: 308, demo: true,
+    t: { zh: '好啊', en: '好啊', ja: '好啊', ko: '好啊' } },
 
   // ── travel — places with a name ──────────────────────────
   { file: 'boulevard_jourdan', cat: 'travel', w: 1179, h: 2066, demo: true,
