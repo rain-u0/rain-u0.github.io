@@ -121,12 +121,13 @@
     while ((m = re.exec(templateText))) {
       if (m[1] === 'all') continue;          /* not a category */
       var entry = strings['filter.' + m[1]];
-      /* English to match this page; the Chinese rides along because
-         that is the label on the site the operator actually looks at. */
+      /* All four, in the same order as a photo's titles. These are the
+         same kind of thing — a name the site shows, once per language —
+         and showing a subset here would just raise the question of
+         which subset. */
       out.push({
-        key:   m[1],
-        label: entry ? entry.en : m[1],
-        zh:    entry ? entry.zh : ''
+        key: m[1],
+        t: entry || { zh: m[1], en: m[1], ja: m[1], ko: m[1] }
       });
     }
     return out;
@@ -153,7 +154,7 @@
     var lines = [];
     state.cats.forEach(function (cat, i) {
       if (i) lines.push('');
-      lines.push(rule(cat.key, state.descs[cat.key] || cat.label));
+      lines.push(rule(cat.key, state.descs[cat.key] || cat.t.en));
       state.photos.filter(function (p) { return p.cat === cat.key; })
         .forEach(function (p) {
           lines.push(
@@ -213,9 +214,9 @@
 
       var sec = el('section', 'group');
       var head = el('div', 'group__head');
-      head.appendChild(el('span', 'group__name', cat.label));
-      head.appendChild(el('span', 'group__key',
-        (cat.zh ? cat.zh + ' · ' : '') + cat.key));
+      head.appendChild(el('span', 'group__name',
+        LANGS.map(function (l) { return cat.t[l]; }).join(' · ')));
+      head.appendChild(el('span', 'group__key', cat.key));
       head.appendChild(el('span', 'group__n', list.length));
       sec.appendChild(head);
 
@@ -277,7 +278,7 @@
     state.cats.forEach(function (c) {
       var o = document.createElement('option');
       o.value = c.key;
-      o.textContent = c.label;
+      o.textContent = c.t.zh;
       if (c.key === p.cat) o.selected = true;
       sel.appendChild(o);
     });
