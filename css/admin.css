@@ -345,3 +345,29 @@ button, input, select { font-family: inherit; font-size: inherit; color: inherit
 .sheet__actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
 
 .sheet__dim { color: var(--fg-faint); }
+
+/* ── Category controls ────────────────────────────────────── */
+.group__del {
+  margin-left: 0.7rem;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 0.3rem;
+  background: transparent;
+  color: var(--fg-faint);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.group__del:hover:not(:disabled) { color: var(--danger); border-color: var(--danger); }
+/* Disabled rather than hidden: the reason it cannot be removed is the
+   count sitting next to it, and hiding the control hides the rule. */
+.group__del:disabled { opacity: 0.3; cursor: not-allowed; }
+
+#cat-key, #cat-desc {
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+}
+#cat-key:focus, #cat-desc:focus { outline: none; border-color: var(--fg-faint); }
+#cat-key.is-bad { border-color: var(--danger); }

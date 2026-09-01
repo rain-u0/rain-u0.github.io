@@ -22,7 +22,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <title>rain_u.0 — Admin</title>
-  <link rel="stylesheet" href="css/admin.css?v=ccaf5f1fdd">
+  <link rel="stylesheet" href="css/admin.css?v=d5490f7c35">
 </head>
 <body>
 
@@ -59,6 +59,7 @@
       <div class="bar__right">
         <span class="bar__state" id="state"></span>
         <button type="button" id="add" class="btn btn--ghost">Add photo</button>
+        <button type="button" id="add-cat" class="btn btn--ghost">Add category</button>
         <button type="button" id="reload" class="btn btn--ghost">Reload</button>
         <button type="button" id="save" class="btn btn--go" disabled>Save</button>
         <button type="button" id="logout" class="btn btn--ghost">Sign out</button>
@@ -122,8 +123,53 @@
     </div>
   </div>
 
+  <!-- ── Add a category ──────────────────────────────────────
+       A category lives in three files at once: a filter button in
+       template.html, four names in i18n/strings.json, and a rule in
+       js/photos.js. All three are written together — the build
+       rejects a key used without a definition, or defined and never
+       used, so a partial edit fails in CI rather than shipping a
+       filter that matches nothing.
+
+       There is no rename. Changing a key means rewriting cat on every
+       photo under it, and no visitor ever sees a key. -->
+  <div class="sheet" id="catsheet" hidden>
+    <div class="sheet__box" role="dialog" aria-modal="true" aria-label="Add a category">
+      <h2 class="sheet__title">Add a category</h2>
+
+      <div class="sheet__row">
+        <label class="sheet__lab" for="cat-key">
+          Key <span class="sheet__dim">— the cat value, and never shown to a visitor</span>
+        </label>
+        <input type="text" id="cat-key" spellcheck="false" autocomplete="off"
+               placeholder="street">
+        <p class="sheet__note" id="cat-note"></p>
+      </div>
+
+      <div class="sheet__row">
+        <span class="sheet__lab">Names <span class="sheet__dim">— the filter button, one per language</span></span>
+        <div class="titles" id="cat-names"></div>
+      </div>
+
+      <div class="sheet__row">
+        <label class="sheet__lab" for="cat-desc">
+          Note <span class="sheet__dim">— one English line, for the comment in photos.js</span>
+        </label>
+        <input type="text" id="cat-desc" spellcheck="false" autocomplete="off"
+               placeholder="street scenes and signage">
+      </div>
+
+      <p class="sheet__err" id="cat-err" hidden></p>
+
+      <div class="sheet__actions">
+        <button type="button" id="cat-cancel" class="btn btn--ghost">Cancel</button>
+        <button type="button" id="cat-save" class="btn btn--go">Add category</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast" hidden></div>
 
-  <script src="js/admin.js?v=4d1e8657af"></script>
+  <script src="js/admin.js?v=b2a63d8085"></script>
 </body>
 </html>

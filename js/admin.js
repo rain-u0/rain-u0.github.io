@@ -379,16 +379,38 @@
       state = {
         photos: parsePhotos(text),
         head:   head,
+        /* Kept as text, not as parsed structures. Adding a category
+           touches two files that are hand-aligned and full of comments;
+           re-emitting them from a parse would reformat everything and
+           bury a one-line change in a whole-file diff. */
+        tplText:     tpl.text,
+        stringsText: strings.text,
+        tplDirty:     false,
+        stringsDirty: false,
         /* Images processed in this session but not yet committed, and
            images the next save should remove. Both ride along with the
            photos.js write so the tree is never half-updated. */
         pending: {},
         removed: [],
+        catsAdded: [],
+        catsRemoved: [],
+        /* Filenames whose images are, or are about to be, in the repo.
+           Deleting one has to remove its files; deleting anything else
+           only drops it from the queue.
+
+           This used to be read off `pending`, which clears on save
+           success — so a photo deleted between sending a save and its
+           reply looked like it had never been committed, and its
+           images stayed behind with no row pointing at them. Entries
+           land here when a save is sent, not when it returns. */
+        known: {},
         cats:   parseCats(tpl.text, JSON.parse(strings.text)),
+        /* One-line English descriptions for the rules in photos.js */
         descs:  parseDescs(text),
         header: text.slice(0, cut + 'const PHOTOS = ['.length),
         footer: '];\n'
       };
+      state.photos.forEach(function (p) { state.known[p.file] = true; });
 
       /* A round trip that changes nothing must produce the same
          bytes. If it does not, the writer and the file have drifted
@@ -418,6 +440,22 @@
         LANGS.map(function (l) { return cat.t[l]; }).join(' · ')));
       head.appendChild(el('span', 'group__key', cat.key));
       head.appendChild(el('span', 'group__n', list.length));
+
+      var del = el('button', 'group__del', 'Delete');
+      del.type = 'button';
+      del.disabled = list.length > 0;
+      del.title = list.length
+        ? 'Move its ' + list.length + ' photo' + (list.length > 1 ? 's' : '') +
+          ' elsewhere first — deleting the category would leave them ' +
+          'matching no filter.'
+        : 'Remove this category';
+      del.addEventListener('click', function () {
+        if (!confirm('Delete the category "' + cat.key + '"?\n\n' +
+                     'Its filter button and its four names go too. ' +
+                     'Nothing happens until you save.')) return;
+        removeCategory(cat.key);
+      });
+      head.appendChild(del);
       sec.appendChild(head);
 
       list.forEach(function (p) { sec.appendChild(row(p, cat.key)); });
@@ -508,12 +546,11 @@
       if (!confirm('Delete ' + p.file + '? Both its images go too.\n\n' +
                    'Nothing happens until you save.')) return;
       state.photos.splice(state.photos.indexOf(p), 1);
-      if (state.pending[p.file]) {
-        /* Never committed, so there is nothing to delete — just drop it */
-        delete state.pending[p.file];
-      } else {
+      delete state.pending[p.file];
+      if (state.known[p.file]) {
         state.removed.push('images/' + p.file + '.jpg',
                            'images/' + p.file + '_demo.jpg');
+        delete state.known[p.file];
       }
       setDirty(true);
       render();
@@ -574,13 +611,21 @@
   /* Say what the commit did, since one save can add, remove and edit
      in the same breath and "update the gallery" tells a later reader
      nothing. */
-  function commitMessage(imageCount) {
+  function commitMessage() {
     var bits = [];
     var added = Object.keys(state.pending).length;
     if (added) bits.push('add ' + added + ' photo' + (added > 1 ? 's' : ''));
     if (state.removed.length) {
       bits.push('remove ' + (state.removed.length / 2) + ' photo' +
                 (state.removed.length > 2 ? 's' : ''));
+    }
+    if (state.catsAdded.length) {
+      bits.push('add the ' + state.catsAdded.join(' and ') + ' category' +
+                (state.catsAdded.length > 1 ? ' keys' : ''));
+    }
+    if (state.catsRemoved.length) {
+      bits.push('remove the ' + state.catsRemoved.join(' and ') + ' category' +
+                (state.catsRemoved.length > 1 ? ' keys' : ''));
     }
     if (!bits.length) return 'Update the gallery from the admin page';
     return bits.join(', ').replace(/^./, function (c) { return c.toUpperCase(); }) +
@@ -601,20 +646,48 @@
     setState('Saving…');
 
     var writes = [{ path: 'js/photos.js', text: serialize() }];
+    if (state.tplDirty)     writes.push({ path: 'template.html',     text: state.tplText });
+    if (state.stringsDirty) writes.push({ path: 'i18n/strings.json', text: state.stringsText });
     Object.keys(state.pending).forEach(function (file) {
       var p = state.pending[file];
       writes.push({ path: 'images/' + file + '.jpg',      b64: p.photoB64 });
       writes.push({ path: 'images/' + file + '_demo.jpg', b64: p.demoB64 });
+      /* Marked before the request goes out. If it succeeds these files
+         exist; if it fails the page must be reloaded anyway. */
+      state.known[file] = true;
     });
 
-    commit(writes, state.removed, commitMessage(writes.length - 1))
+    /* Snapshot what is going out. Clearing the queues wholesale on
+       reply would discard anything added to them in the meantime —
+       a photo deleted mid-save would lose its scheduled file removal
+       and leave its images behind with no row pointing at them. */
+    var sentRev     = rev;
+    var sentPending = Object.keys(state.pending);
+    var sentRemoved = state.removed.slice();
+    var sentAdded   = state.catsAdded.slice();
+    var sentGone    = state.catsRemoved.slice();
+    var without = function (list, sent) {
+      return list.filter(function (x) { return sent.indexOf(x) === -1; });
+    };
+
+    commit(writes, state.removed, commitMessage())
       .then(function () {
-        state.pending = {};
-        state.removed = [];
-        setDirty(false);
+        sentPending.forEach(function (f) { delete state.pending[f]; });
+        state.removed     = without(state.removed, sentRemoved);
+        state.catsAdded   = without(state.catsAdded, sentAdded);
+        state.catsRemoved = without(state.catsRemoved, sentGone);
+
+        if (rev === sentRev) {
+          state.tplDirty = false;
+          state.stringsDirty = false;
+          setDirty(false);
+          toast('Saved. The site updates in about a minute.', 'ok');
+        } else {
+          toast('Saved — but you edited while it was saving, so there ' +
+                'is more to save.', 'ok');
+        }
         setState('');
         render();
-        toast('Saved. The site updates in about a minute.', 'ok');
       })
       .catch(function (e) {
         setState('');
@@ -819,12 +892,182 @@
       if (e.target === $('sheet')) $('sheet').hidden = true;
     });
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && !$('sheet').hidden) $('sheet').hidden = true;
+      if (e.key !== 'Escape') return;
+      if (!$('sheet').hidden) $('sheet').hidden = true;
+      if (!$('catsheet').hidden) $('catsheet').hidden = true;
     });
   }
 
+  /* ── Categories ────────────────────────────────────────────
+     A category is three things in three files: a filter button in
+     template.html, a name per language in i18n/strings.json, and a
+     rule comment in js/photos.js. All three move together or the
+     build refuses — it rejects a key used without a definition and a
+     definition never used — so a half-done edit fails loudly in CI
+     instead of shipping a filter that shows nothing.
+
+     Renaming is not offered. Changing the key would mean rewriting
+     cat on every photo that uses it, and the key is never shown to a
+     visitor, so the risk buys nothing.
+
+     Both files are hand-aligned to their longest key. Inserting keeps
+     that: pad to the current column, or re-pad every line if the new
+     key is longer than any of them. */
+  function filterColumn(keys) {
+    return Math.max.apply(null, keys.map(function (k) { return k.length; })) + 1;
+  }
+
+  function addCategory(key, names, desc) {
+    /* template.html — the button, appended after the last one */
+    var line = '          <button type="button" data-filter="' + key + '" ' +
+               'aria-pressed="false">{{filter.' + key + '}}</button>';
+    state.tplText = state.tplText.replace(
+      /([ \t]*<button type="button" data-filter="\w+"[\s\S]*?<\/button>\n)(?![\s\S]*?data-filter=)/,
+      '$1' + line + '\n');
+
+    /* i18n/strings.json — the four names */
+    var jline = '  "filter.' + key + '": { ' + LANGS.map(function (l) {
+      return '"' + l + '": ' + JSON.stringify(names[l]);
+    }).join(', ') + ' },';
+    state.stringsText = state.stringsText.replace(
+      /(  "filter\.\w+":[^\n]*\n)(?!  "filter\.)/, '$1' + jline + '\n');
+
+    /* js/photos.js — regenerated from state.cats, so this is enough */
+    var t = {};
+    LANGS.forEach(function (l) { t[l] = names[l]; });
+    state.cats.push({ key: key, t: t });
+    state.descs[key] = desc;
+    state.catsAdded.push(key);
+
+    realign();
+    setDirty(true);
+    render();
+  }
+
+  function removeCategory(key) {
+    state.tplText = state.tplText.replace(
+      new RegExp('[ \\t]*<button[^\\n]*data-filter="' + key + '"[^\\n]*\\n'), '');
+    state.stringsText = state.stringsText.replace(
+      new RegExp('  "filter\\.' + key + '":[^\\n]*\\n'), '');
+    state.cats = state.cats.filter(function (c) { return c.key !== key; });
+    delete state.descs[key];
+    /* Added and removed in the same session cancels out — the commit
+       should describe the net change, not the operator's path to it. */
+    var i = state.catsAdded.indexOf(key);
+    if (i !== -1) state.catsAdded.splice(i, 1);
+    else state.catsRemoved.push(key);
+    realign();
+    setDirty(true);
+    render();
+  }
+
+  /* Run after every add and remove rather than only when the column
+     moves. Padding that is already right comes out unchanged, and
+     doing it unconditionally is what makes removing a long key undo
+     the widening that adding it caused. */
+  function realign() {
+    var col = filterColumn(['all'].concat(state.cats.map(function (c) {
+      return c.key;
+    })));
+    state.tplText = repadTemplate(state.tplText, col);
+    state.stringsText = repadStrings(state.stringsText, col + 'filter.'.length + 3);
+    state.tplDirty = true;
+    state.stringsDirty = true;
+  }
+
+  function repadTemplate(text, col) {
+    return text.replace(/(data-filter="(\w+)")(\s+)(aria-pressed)/g,
+      function (_, a, k, __, b) {
+        return a + Array(col - k.length + 1).join(' ') + b;
+      });
+  }
+
+  function repadStrings(text, col) {
+    return text.replace(/^(  "filter\.\w+":)(\s+)(\{)/gm,
+      function (_, a, __, b) {
+        return a + Array(Math.max(1, col - a.length + 3)).join(' ') + b;
+      });
+  }
+
+  /* ── The category sheet ────────────────────────────────── */
+  function resetCatSheet() {
+    $('cat-key').value = '';
+    $('cat-key').classList.remove('is-bad');
+    $('cat-note').textContent = '';
+    $('cat-desc').value = '';
+    $('cat-err').hidden = true;
+
+    var box = $('cat-names');
+    box.textContent = '';
+    LANGS.forEach(function (lang) {
+      var f = el('div', 'field');
+      f.appendChild(el('span', 'field__lang', lang.toUpperCase()));
+      var i = document.createElement('input');
+      i.type = 'text';
+      i.dataset.lang = lang;
+      f.appendChild(i);
+      box.appendChild(f);
+    });
+  }
+
+  function checkCatKey() {
+    var raw = $('cat-key').value;
+    var clean = sanitize(raw);
+    var dropped = droppedFrom(raw);
+    var taken = ['all'].concat(state.cats.map(function (c) { return c.key; }));
+    var problem = null;
+
+    if (!raw.trim()) problem = null;
+    else if (dropped.length) {
+      problem = 'Remove ' + dropped.join(' ') + ' — a key goes in an HTML ' +
+                'attribute and a JSON key, so it has to be ASCII.';
+    } else if (!clean) problem = 'That leaves no key at all.';
+    else if (taken.indexOf(clean) !== -1) problem = clean + ' is already a category.';
+
+    $('cat-key').classList.toggle('is-bad', !!problem);
+    $('cat-note').classList.toggle('is-bad', !!problem);
+    $('cat-note').textContent = problem || (clean ? 'cat: \'' + clean + '\'' : '');
+    return problem ? null : clean;
+  }
+
+  function submitCategory() {
+    var key = checkCatKey();
+    if (!key) {
+      catErr($('cat-key').value.trim() ? 'Fix the key first.' : 'A key is required.');
+      return;
+    }
+    var names = {}, missing = [];
+    $('cat-names').querySelectorAll('input').forEach(function (i) {
+      names[i.dataset.lang] = i.value.trim();
+      if (!i.value.trim()) missing.push(i.dataset.lang.toUpperCase());
+    });
+    if (missing.length) {
+      catErr('Missing ' + missing.join(', ') + '. The build refuses a string ' +
+             'without all four, so this would fail rather than ship.');
+      return;
+    }
+    var desc = $('cat-desc').value.trim();
+    if (!desc) { catErr('The note is required — it becomes the comment in photos.js.'); return; }
+
+    addCategory(key, names, desc);
+    $('catsheet').hidden = true;
+    toast('Added the category ' + key + '. Save to publish it.', 'ok');
+  }
+
+  function catErr(msg) {
+    $('cat-err').textContent = msg || '';
+    $('cat-err').hidden = !msg;
+  }
+
   /* ── Chrome ───────────────────────────────────────────────── */
+  /* Bumped by every edit. A save compares the value it saw when it was
+     sent against the value on reply: if they differ, something was
+     edited while the request was in the air and the page is still
+     dirty, whatever the reply says. */
+  var rev = 0;
+
   function setDirty(v) {
+    if (v) rev++;
     dirty = v;
     $('save').disabled = !v;
     $('state').textContent = v ? 'Unsaved changes' : '';
@@ -887,6 +1130,16 @@
   $('add').addEventListener('click', function () {
     resetSheet();
     $('sheet').hidden = false;
+  });
+  $('add-cat').addEventListener('click', function () {
+    resetCatSheet();
+    $('catsheet').hidden = false;
+  });
+  $('cat-key').addEventListener('input', checkCatKey);
+  $('cat-save').addEventListener('click', submitCategory);
+  $('cat-cancel').addEventListener('click', function () { $('catsheet').hidden = true; });
+  $('catsheet').addEventListener('click', function (e) {
+    if (e.target === $('catsheet')) $('catsheet').hidden = true;
   });
   $('save').addEventListener('click', save);
   $('logout').addEventListener('click', signOut);
