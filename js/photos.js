@@ -126,5 +126,5 @@ const PHOTOS = [
 
   // ── test — test ──────────────────────────────────────────
   { file: 'test', cat: 'test', w: 326, h: 308, demo: true,
-    t: { zh: 'tset', en: 'test', ja: 'tset', ko: 'tests' } },
+    t: { zh: 'tset', en: 'test', ja: 'tset', ko: 'testsq' } },
 ];
