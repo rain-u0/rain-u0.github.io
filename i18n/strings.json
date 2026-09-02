@@ -84,6 +84,8 @@
   "filter.linger": { "zh": "消磨", "en": "Linger", "ja": "長居",   "ko": "머무름" },
   "filter.travel": { "zh": "旅行", "en": "Travel", "ja": "旅",     "ko": "여행" },
   "filter.mood":   { "zh": "氛圍", "en": "Mood",   "ja": "空気",   "ko": "분위기" },
+  "filter.anime":  { "zh": "動漫", "en": "Anime", "ja": "アニメ", "ko": "애니" },
+  "filter.test":   { "zh": "test", "en": "test", "ja": "test", "ko": "test" },
 
   "notes.heading": { "zh": "隨筆 Notes", "en": "Notes", "ja": "雑記 Notes", "ko": "단상 Notes" },
   "notes.aside": {

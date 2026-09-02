@@ -121,4 +121,8 @@ const PHOTOS = [
     t: { zh: '金色的路', en: 'Golden Path', ja: '金色の道', ko: '금빛 길' } },
   { file: 'silent_snow', cat: 'mood', w: 887, h: 1600, demo: true,
     t: { zh: '靜靜落雪', en: 'Silent Snow', ja: 'しずかに降る雪', ko: '조용히 내리는 눈' } },
+
+  // ── anime — anime-inspired ───────────────────────────────
+
+  // ── test — test ──────────────────────────────────────────
 ];
