@@ -39,11 +39,25 @@ jobs:
         with:
           python-version: '3.x'
 
+      # The runner ships with Node, but pinning it here says the check
+      # depends on one and keeps a runner image change from picking a
+      # different major without anyone deciding to.
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
       # Aborts on a missing translation, an undefined key, or a key
       # defined and never used — so a broken edit fails here rather
       # than shipping.
       - name: Generate the language pages
         run: python3 tools/build.py
+
+      # The failures these catch are all quiet ones — an untitled tile,
+      # a filter that matches nothing, a row pointing at an image that
+      # was never uploaded. Each has happened here, and each was found
+      # by eye rather than by anything noticing.
+      - name: Check the gallery is consistent
+        run: node tools/check.js
 
       # Assembled explicitly rather than uploading the whole checkout:
       # template.html, i18n/ and tools/ are inputs to the build, not
