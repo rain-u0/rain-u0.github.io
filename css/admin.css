@@ -108,7 +108,16 @@ button, input, select { font-family: inherit; font-size: inherit; color: inherit
 
 .bar__left { display: flex; align-items: baseline; gap: 0.7rem; }
 .bar__count { color: var(--fg-dim); font-size: 0.85rem; }
-.bar__right { display: flex; align-items: center; gap: 0.5rem; }
+/* Wraps. Five buttons come to about 390px, which a phone does not
+   have — and .bar wrapping does not help when the group inside it
+   cannot. */
+.bar__right {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+}
 .bar__state { color: var(--fg-dim); font-size: 0.82rem; margin-right: 0.3rem; }
 .bar__state.is-dirty { color: var(--accent); }
 
@@ -410,4 +419,28 @@ button, input, select { font-family: inherit; font-size: inherit; color: inherit
   /* Short enough to smooth the jump when one file finishes, long
      enough not to lag behind the bytes it is reporting. */
   transition: stroke-dashoffset 0.18s linear;
+}
+
+/* ── Narrow screens ───────────────────────────────────────────
+   The bar is sticky, so every row it grows by is a row taken from
+   the list underneath. Tightening the buttons keeps the wrap to two
+   lines on a phone instead of three.
+   ──────────────────────────────────────────────────────────── */
+@media (max-width: 560px) {
+  .bar { padding: 0.6rem 0.8rem; gap: 0.5rem; }
+  .btn { padding: 0.4rem 0.7rem; }
+  .bar__count { font-size: 0.78rem; }
+
+  /* The thumbnail and the controls both shrink; the titles below them
+     already drop to one column at this width. */
+  .row { grid-template-columns: auto 52px 1fr; gap: 0.6rem; }
+  .row__thumb { width: 52px; }
+  /* Out of the grid's last column and onto its own line, where a
+     select and a button have room to sit side by side. */
+  .row__side {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+  .row__cat { flex: 1; min-width: 0; }
 }
