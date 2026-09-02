@@ -123,4 +123,6 @@ const PHOTOS = [
     t: { zh: '靜靜落雪', en: 'Silent Snow', ja: 'しずかに降る雪', ko: '조용히 내리는 눈' } },
 
   // ── anime — anime-inspired ───────────────────────────────
+  { file: 'promise_deep', cat: 'anime', w: 740, h: 1600, demo: true,
+    t: { zh: '約定・濃厚', en: 'Promise — Deep', ja: '約束・濃い', ko: '약속 짙은' } },
 ];
