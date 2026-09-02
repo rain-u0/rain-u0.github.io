@@ -176,6 +176,19 @@
       var n = cat === 'all'
         ? photos.length
         : photos.filter(function (p) { return p.cat === cat; }).length;
+
+      /* A category with nothing in it is a button that leads to an
+         empty gallery, which reads as a fault rather than a filter.
+         The template carries every category that exists; whether one
+         has any photos is only known here, so hiding it is a runtime
+         decision and it comes back on its own once a photo lands in
+         it. "All" stays even at zero — it is the reset, not a
+         category. */
+      if (!n && cat !== 'all') {
+        b.hidden = true;
+        return;
+      }
+
       var span = document.createElement('span');
       span.className = 'count';
       span.textContent = n;

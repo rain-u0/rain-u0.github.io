@@ -722,6 +722,11 @@ body.nav-open .nav-scrim { opacity: 1; }
 
 .filters .count { opacity: 0.55; margin-left: 0.45em; }
 
+/* js/main.js hides a category with no photos in it. Spelled out
+   because a `display` on the rule above would otherwise outrank the
+   browser's own [hidden] and leave the button on screen. */
+.filters button[hidden] { display: none; }
+
 /* ── Photo masonry ────────────────────────────────────────── */
 /* CSS columns for masonry: no JS position maths, and portrait
    photos tile naturally. Note items flow down each column, then
