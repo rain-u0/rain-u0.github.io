@@ -218,6 +218,38 @@
     });
   }
 
+  /* fetch cannot report how much of a request body has gone out —
+     there is no event for it — so the one call where that matters,
+     uploading an image, goes through XMLHttpRequest instead. Its
+     upload.onprogress is what every progress bar was built on before
+     fetch existed. Everything else stays on fetch: those bodies are a
+     few KB of JSON and finish in one go. */
+  function postWithProgress(path, body, onProgress) {
+    return new Promise(function (resolve, reject) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', API + path);
+      xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+      xhr.setRequestHeader('Accept', 'application/vnd.github+json');
+      xhr.setRequestHeader('X-GitHub-Api-Version', '2022-11-28');
+      xhr.setRequestHeader('Content-Type', 'application/json');
+
+      xhr.upload.addEventListener('progress', function (e) {
+        if (e.lengthComputable) onProgress(e.loaded);
+      });
+
+      xhr.onload = function () {
+        var data = {};
+        try { data = JSON.parse(xhr.responseText); } catch (e) {}
+        if (xhr.status >= 200 && xhr.status < 300) return resolve(data);
+        var err = new Error(data.message || ('HTTP ' + xhr.status));
+        err.status = xhr.status;
+        reject(err);
+      };
+      xhr.onerror = function () { reject(new Error('network error')); };
+      xhr.send(body);
+    });
+  }
+
   function getFile(path) {
     /* Cache-bust: the API is CDN-fronted and will otherwise happily
        hand back the version from before your last save. */
@@ -247,27 +279,62 @@
 
   function commit(writes, deletes, message) {
     var parent = state.head;
+    /* Set once the bodies are built. The later steps read it too, so
+       a text-only save never flashes the ring on its way past 94%. */
+    var ringing = false;
 
     return api('/repos/' + REPO + '/git/commits/' + parent)
       .then(function (c) {
         var baseTree = c.tree.sha;
 
         /* Blobs first: a tree entry needs a sha, and base64 is the only
-           encoding that survives a JPEG intact. */
-        return Promise.all(writes.map(function (w) {
-          return api('/repos/' + REPO + '/git/blobs', {
-            method: 'POST',
-            body: JSON.stringify({
-              content: w.b64 != null ? w.b64 : encodeB64(w.text),
-              encoding: 'base64'
-            })
-          }).then(function (b) {
-            return { path: w.path, mode: '100644', type: 'blob', sha: b.sha };
+           encoding that survives a JPEG intact.
+
+           The bodies are built up front so their total size is known
+           before the first byte goes out — a percentage needs a
+           denominator. Each upload reports against its own share, and
+           the ring shows the sum. */
+        var bodies = writes.map(function (w) {
+          return JSON.stringify({
+            content: w.b64 != null ? w.b64 : encodeB64(w.text),
+            encoding: 'base64'
+          });
+        });
+        var total = bodies.reduce(function (n, b) { return n + b.length; }, 0);
+        var sent = bodies.map(function () { return 0; });
+        ringing = writes.some(function (w) { return w.b64 != null; });
+
+        if (ringing) progress(0);
+
+        return Promise.all(bodies.map(function (body, i) {
+          return postWithProgress('/repos/' + REPO + '/git/blobs', body,
+            function (loaded) {
+              sent[i] = loaded;
+              if (!ringing) return;
+              var done = sent.reduce(function (a, b) { return a + b; }, 0);
+              /* Capped short of full: the tree, the commit and the ref
+                 update are still to come, and a ring sitting at 100%
+                 while requests are outstanding is a lie. */
+              progress(0.9 * done / total);
+            }
+          ).then(function (b) {
+            return { path: writes[i].path, mode: '100644', type: 'blob', sha: b.sha };
           });
         })).then(function (entries) {
           /* A null sha on an existing path is how the tree API spells
-             deletion. */
+             deletion.
+
+             Anything also being written is dropped from the list. The
+             two can collide: delete a photo, then add another under
+             the same name — which the duplicate check allows, the name
+             being free again — and the path lands in both. Deletions
+             are appended, so the delete would win and the file would
+             be uploaded and then removed in the same commit, leaving a
+             row pointing at nothing. */
+          var written = {};
+          entries.forEach(function (e) { written[e.path] = true; });
           (deletes || []).forEach(function (path) {
+            if (written[path]) return;
             entries.push({ path: path, mode: '100644', type: 'blob', sha: null });
           });
           return api('/repos/' + REPO + '/git/trees', {
@@ -277,6 +344,7 @@
         });
       })
       .then(function (tree) {
+        if (ringing) progress(0.94);
         return api('/repos/' + REPO + '/git/commits', {
           method: 'POST',
           body: JSON.stringify({
@@ -287,10 +355,12 @@
         });
       })
       .then(function (c) {
+        if (ringing) progress(0.97);
         return api('/repos/' + REPO + '/git/refs/heads/' + BRANCH, {
           method: 'PATCH',
           body: JSON.stringify({ sha: c.sha })   /* force defaults to false */
         }).then(function () {
+          if (ringing) progress(1);
           state.head = c.sha;
           return c;
         });
@@ -687,10 +757,12 @@
                 'is more to save.', 'ok');
         }
         setState('');
+        progress(null);
         render();
       })
       .catch(function (e) {
         setState('');
+        progress(null);
         $('save').disabled = false;
         /* 409 from the contents API, 422 from a non-fast-forward ref
            update — the same situation reported two ways. */
@@ -1084,6 +1156,21 @@
   function setState(msg) {
     busy = msg;
     showState();
+  }
+
+  /* Called with 0..1 while a save carries images, and with null to put
+     the ring away. Text-only saves never call it: they are over in the
+     time the ring would take to draw, and a control that flashes says
+     less than the word already sitting beside it. */
+  function progress(p) {
+    var ring = $('ring');
+    if (p == null) {
+      ring.hidden = true;
+      ring.style.setProperty('--p', 0);
+      return;
+    }
+    ring.hidden = false;
+    ring.style.setProperty('--p', Math.max(0, Math.min(1, p)));
   }
 
   function showState() {

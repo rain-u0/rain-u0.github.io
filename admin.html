@@ -22,7 +22,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <title>rain_u.0 — Admin</title>
-  <link rel="stylesheet" href="css/admin.css?v=9cabcd66e6">
+  <link rel="stylesheet" href="css/admin.css?v=c4b01acfb6">
 </head>
 <body>
 
@@ -57,6 +57,16 @@
         <span class="bar__count" id="count">—</span>
       </div>
       <div class="bar__right">
+        <!-- Fills with the bytes actually sent, so it only appears
+             when there are images going up — a text-only save is over
+             before a ring could finish drawing. aria-hidden because
+             the status text beside it already says what is happening. -->
+        <span class="ring" id="ring" hidden aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <circle class="ring__track" cx="12" cy="12" r="10"/>
+            <circle class="ring__fill"  cx="12" cy="12" r="10"/>
+          </svg>
+        </span>
         <span class="bar__state" id="state"></span>
         <button type="button" id="add" class="btn btn--ghost">Add photo</button>
         <button type="button" id="add-cat" class="btn btn--ghost">Add category</button>
@@ -170,6 +180,6 @@
 
   <div class="toast" id="toast" hidden></div>
 
-  <script src="js/admin.js?v=c49db6e5ab"></script>
+  <script src="js/admin.js?v=93df4079a7"></script>
 </body>
 </html>
