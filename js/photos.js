@@ -128,5 +128,5 @@ const PHOTOS = [
   { file: 'test', cat: 'test', w: 326, h: 308, demo: true,
     t: { zh: 'tset', en: 'test1', ja: 'tset', ko: 'testsq' } },
   { file: '2026_08_21_3_51_46', cat: 'test', w: 726, h: 448, demo: true,
-    t: { zh: 'we', en: 'eew', ja: 'we', ko: 'we' } },
+    t: { zh: '11', en: '11', ja: '11', ko: '11' } },
 ];
