@@ -371,3 +371,5 @@ button, input, select { font-family: inherit; font-size: inherit; color: inherit
 }
 #cat-key:focus, #cat-desc:focus { outline: none; border-color: var(--fg-faint); }
 #cat-key.is-bad { border-color: var(--danger); }
+
+.bar__state.is-busy { color: var(--fg); }

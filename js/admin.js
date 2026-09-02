@@ -33,7 +33,7 @@
   var RULE_WIDTH = 62;
 
   var token = null;
-  var state = null;     /* { photos, sha, cats, descs, header, footer } */
+  var state = null;     /* { photos, head, cats, descs, header, footer } */
   var dirty = false;
 
   var $ = function (id) { return document.getElementById(id); };
@@ -1070,11 +1070,28 @@
     if (v) rev++;
     dirty = v;
     $('save').disabled = !v;
-    $('state').textContent = v ? 'Unsaved changes' : '';
-    $('state').classList.toggle('is-dirty', v);
+    if (!busy) showState();
   }
 
-  function setState(msg) { if (!dirty) $('state').textContent = msg; }
+  /* Work in progress outranks the dirty flag. Both are true while a
+     save is in the air, and of the two "Saving…" is the one that
+     answers the question the operator just asked by clicking. This
+     used to be the other way round — the status only updated when
+     nothing was dirty, so "Saving…" could never appear at all and a
+     save looked like a button that did nothing for a second or two. */
+  var busy = '';
+
+  function setState(msg) {
+    busy = msg;
+    showState();
+  }
+
+  function showState() {
+    var text = busy || (dirty ? 'Unsaved changes' : '');
+    $('state').textContent = text;
+    $('state').classList.toggle('is-dirty', !busy && dirty);
+    $('state').classList.toggle('is-busy', !!busy);
+  }
 
   var toastTimer;
   function toast(msg, kind, ms) {
