@@ -123,8 +123,4 @@ const PHOTOS = [
     t: { zh: '靜靜落雪', en: 'Silent Snow', ja: 'しずかに降る雪', ko: '조용히 내리는 눈' } },
 
   // ── anime — anime-inspired ───────────────────────────────
-
-  // ── test — test ──────────────────────────────────────────
-  { file: 'test', cat: 'test', w: 326, h: 308, demo: true,
-    t: { zh: 'tset', en: 'test1', ja: 'tset', ko: 'testsq' } },
 ];
