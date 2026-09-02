@@ -66,7 +66,7 @@ jobs:
         run: |
           mkdir _site
           cp index.html index-en.html index-ja.html index-ko.html _site/
-          cp admin.html _site/
+          cp adrain.html _site/
           cp -r css js images _site/
           echo "--- deploying ---"
           find _site -maxdepth 1 -mindepth 1 | sort

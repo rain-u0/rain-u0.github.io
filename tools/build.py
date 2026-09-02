@@ -51,11 +51,11 @@ LANGS = ["zh", "en", "ja", "ko"]
 SITE_ASSETS  = ["css/style.css", "js/photos.js", "js/main.js"]
 ADMIN_ASSETS = ["css/admin.css", "js/admin.js"]
 
-# admin.html is not generated from the template — it has one operator and
-# no translations — but it needs the same treatment for a sharper reason.
-# Stale CSS on the site is a broken layout; stale admin.js is older code
-# writing to js/photos.js, which corrupts data rather than appearance.
-ADMIN_PAGE = "admin.html"
+# The admin page is not generated from the template — it has one operator
+# and no translations — but it needs the same treatment for a sharper
+# reason. Stale CSS on the site is a broken layout; stale admin.js is older
+# code writing to js/photos.js, which corrupts data rather than appearance.
+ADMIN_PAGE = "adrain.html"
 
 # Which file each language writes to. zh keeps the bare name so the
 # default URL stays clean.
