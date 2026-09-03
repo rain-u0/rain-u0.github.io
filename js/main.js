@@ -392,6 +392,13 @@
      .theme__dot rule in the stylesheet, a button in template.html,
      and the name in the list below. */
   var THEMES = ['gold', 'forest', 'nebula', 'ocean', 'sweet'];
+
+  /* Named rather than taken as THEMES[0], so which palette is the
+     default and what order the dots sit in stay separate questions.
+     It lives on :root in the stylesheet, so applying it means taking
+     the attribute off — and the inline script in <head> hard-codes
+     the same name, having no way to read this one. */
+  var DEFAULT_THEME = 'sweet';
   var themeBtns = Array.prototype.slice.call(
     document.querySelectorAll('[data-theme-set]'));
 
@@ -399,11 +406,11 @@
     var applyTheme = function (name, remember) {
       /* A palette dropped from the stylesheet would otherwise leave
          the page with an attribute nothing styles */
-      if (THEMES.indexOf(name) === -1) name = THEMES[0];
+      if (THEMES.indexOf(name) === -1) name = DEFAULT_THEME;
 
-      /* Gold is the default and lives on :root itself, so it is the
-         absence of the attribute rather than a value of it. */
-      if (name === THEMES[0]) {
+      /* The default lives on :root itself, so it is the absence of the
+         attribute rather than a value of it. */
+      if (name === DEFAULT_THEME) {
         document.documentElement.removeAttribute('data-theme');
       } else {
         document.documentElement.setAttribute('data-theme', name);
@@ -448,11 +455,12 @@
       });
     });
 
-    /* The markup ships with gold pressed. Read the stored value back
-       and re-run, so the dots agree with what <head> already did. */
+    /* The markup ships with the default pressed. Read the stored value
+       back and re-run, so the dots agree with what <head> already
+       did. */
     var savedTheme = null;
     try { savedTheme = localStorage.getItem('theme'); } catch (e) {}
-    applyTheme(savedTheme || THEMES[0], false);
+    applyTheme(savedTheme || DEFAULT_THEME, false);
   }
 
   /* Hero portrait: show the placeholder if the file is missing */

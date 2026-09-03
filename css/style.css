@@ -47,15 +47,37 @@
    panels, scrims, hairlines — and `rgb(var(--fg-rgb) / 0.1)` is the
    only way to get there from a custom property.
 
-   Gold is the default and lives on :root itself, so selecting it is
+   Sweet is the default and lives on :root itself, so selecting it is
    expressed as the absence of the attribute.
    ──────────────────────────────────────────────────────────── */
 
-/* gold — warm gold on near-black, reads filmic. Shown as Amber:
-   the label was renamed to sit with the other four, which name
-   things rather than colours. The key stays `gold` because it is
-   also the stored value in every visitor's localStorage. */
+/* sweet — warm cream under rose, and the default: a visitor who has
+   never touched the switcher sees this. Being the default it lives on
+   :root itself, so selecting it is the absence of the attribute — and
+   so a page with its script disabled still gets the right palette. */
 :root {
+  --bg-rgb:        250 244 240;
+  --bg-raised-rgb: 255 251 249;
+  --fg-rgb:        58 44 48;
+  --accent-rgb:    193 92 122;
+  --fg-dim:        #8a7076;
+  --fg-faint:      #b3999f;
+  /* A hairline is fg-on-bg, and dark-on-light disappears far sooner
+     than light-on-dark at the same alpha. */
+  --line-a:        0.16;
+  --glow-b:        236 196 176;
+  /* Banding, not brightness, sets this. A wash 0.15 deep over cream
+     shifts a channel by only ~10 steps, and 10 steps stretched over
+     800px breaks into visible rings. More contrast means more
+     gradations, so raising it is what smooths it out. */
+  --glow-b-a:      0.42;
+}
+
+/* gold — warm gold on near-black, reads filmic. Shown as Amber: the
+   label was renamed to sit with the other four, which name things
+   rather than colours. The key stays `gold` because it is the value
+   already in every visitor's localStorage who picked it. */
+:root[data-theme="gold"] {
   --bg-rgb:        13 14 18;
   --bg-raised-rgb: 20 22 28;
   --fg-rgb:        232 230 225;
@@ -122,26 +144,6 @@
   --glow-b-a:      0.55;
 }
 
-/* sweet — warm cream under rose. Light, like ocean; both are
-   re-pointed in the correction block below the design tokens. */
-:root[data-theme="sweet"] {
-  --bg-rgb:        250 244 240;
-  --bg-raised-rgb: 255 251 249;
-  --fg-rgb:        58 44 48;
-  --accent-rgb:    193 92 122;
-  --fg-dim:        #8a7076;
-  --fg-faint:      #b3999f;
-  /* A hairline is fg-on-bg, and dark-on-light disappears far sooner
-     than light-on-dark at the same alpha. */
-  --line-a:        0.16;
-  --glow-b:        236 196 176;
-  /* Banding, not brightness, sets this. A wash 0.15 deep over cream
-     shifts a channel by only ~10 steps, and 10 steps stretched over
-     800px breaks into visible rings. More contrast means more
-     gradations, so raising it is what smooths it out. */
-  --glow-b-a:      0.42;
-}
-
 /* ── Design tokens ─────────────────────────────────────────── */
 :root {
   /* Derived from the palette above — identical for every theme, so
@@ -155,14 +157,16 @@
   /* Text that sits on a photo rather than on the page ground: the
      gallery caption, the side nav floating over a tile. A photo is
      a photo in every theme, so these never follow the palette —
-     only the shadow does, and only to stay legible on a light
-     ground. Overridden for the light palettes further down. */
+     only the shadow does, and only to stay legible. Overridden for
+     the dark palettes further down. */
   --on-photo:    #f2f0ec;
-  --rail-shadow: 0 1px 5px rgb(0 0 0 / 0.9), 0 0 14px rgb(0 0 0 / 0.7);
+  --rail-shadow: 0 1px 5px rgb(255 255 255 / 0.95),
+                 0 0 14px rgb(255 255 255 / 0.85);
 
   /* The lightbox is a viewer, not a page: it stays dark under every
-     theme, the two light ones included, so a photo is never framed
-     by a bright surround. Hence its own tokens. */
+     theme, the two light ones included — one of them the default —
+     so a photo is never framed by a bright surround. Its own tokens
+     for that reason. */
   --box-bg:      rgb(8 9 12 / 0.96);
   --box-fg:      #e8e6e1;
   --box-dim:     #9a978f;
@@ -170,7 +174,7 @@
   --box-hover:   rgb(232 230 225 / 0.08);
   --box-ink:     #0d0e12;        /* text on a filled light pill */
 
-  --shadow-lift: 0 18px 40px rgb(0 0 0 / 0.5);
+  --shadow-lift: 0 18px 40px rgb(90 100 100 / 0.18);
 
   --font-sans: 'CJKDash', "Helvetica Neue", "Noto Sans TC", "PingFang TC",
                "Microsoft JhengHei", system-ui, sans-serif;
@@ -197,15 +201,16 @@
   --navbtn-size: 2.75rem;
 }
 
-/* Light-palette corrections. Two things invert on a pale ground:
-   the side nav is dark text that still has to cross dark photos, so
-   its halo goes white instead of black; and a heavy black lift
-   reads as dirt rather than depth. */
-:root[data-theme="sweet"],
-:root[data-theme="ocean"] {
-  --rail-shadow: 0 1px 5px rgb(255 255 255 / 0.95),
-                 0 0 14px rgb(255 255 255 / 0.85);
-  --shadow-lift: 0 18px 40px rgb(90 100 100 / 0.18);
+/* Dark-palette corrections. The tokens above are set for a pale
+   ground, the default being one: the side nav is dark text that still
+   has to cross dark photos, so its halo is white, and its lift is
+   light because a heavy black one would read as dirt. On a dark
+   ground both invert. Ocean is light and needs neither. */
+:root[data-theme="gold"],
+:root[data-theme="forest"],
+:root[data-theme="nebula"] {
+  --rail-shadow: 0 1px 5px rgb(0 0 0 / 0.9), 0 0 14px rgb(0 0 0 / 0.7);
+  --shadow-lift: 0 18px 40px rgb(0 0 0 / 0.5);
 }
 
 /* ── Step 1: freeze animation while loading ───────────────── */

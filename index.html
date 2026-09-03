@@ -20,19 +20,24 @@
   <title>rain_u.0</title>
   <meta name="description" content="手機桌布、隨筆與一些散落的紀錄。">
 
-  <link rel="stylesheet" href="css/style.css?v=da2c9dc939">
+  <link rel="stylesheet" href="css/style.css?v=4e7c6c089d">
 
   <!-- Applies the saved palette before the first paint. It has to be
        inline and it has to be here: loaded from a file, or moved to
        the bottom with the other scripts, the page would paint in the
-       default gold and then jump. Kept to the one job for that
-       reason — js/main.js does the rest once the DOM exists.
+       default and then jump. Kept to the one job for that reason —
+       js/main.js does the rest once the DOM exists.
+
+       'sweet' is DEFAULT_THEME in js/main.js, repeated here because a
+       script this early cannot read it. It lives on :root, so leaving
+       the attribute off is how it is selected.
+
        localStorage throws outright in some privacy modes, so the
        whole thing sits in a try. -->
   <script>
     try {
       var t = localStorage.getItem('theme');
-      if (t && t !== 'gold') document.documentElement.setAttribute('data-theme', t);
+      if (t && t !== 'sweet') document.documentElement.setAttribute('data-theme', t);
     } catch (e) {}
   </script>
 </head>
@@ -160,11 +165,11 @@
            row reads; keeping DOM order and visual order together is
            also what keeps tabbing sane. -->
       <div class="theme" role="group" aria-label="主題色調">
-        <button type="button" class="theme__dot" data-theme-set="gold"   aria-label="琥珀"   aria-pressed="true"></button>
+        <button type="button" class="theme__dot" data-theme-set="gold"   aria-label="琥珀"   aria-pressed="false"></button>
         <button type="button" class="theme__dot" data-theme-set="forest" aria-label="森林" aria-pressed="false"></button>
         <button type="button" class="theme__dot" data-theme-set="nebula" aria-label="星雲"   aria-pressed="false"></button>
         <button type="button" class="theme__dot" data-theme-set="ocean"  aria-label="海洋"  aria-pressed="false"></button>
-        <button type="button" class="theme__dot" data-theme-set="sweet"  aria-label="甜蜜"  aria-pressed="false"></button>
+        <button type="button" class="theme__dot" data-theme-set="sweet"  aria-label="甜蜜"  aria-pressed="true"></button>
       </div>
 
       <nav class="lang" aria-label="語言選擇">
@@ -304,11 +309,11 @@
       </nav>
 
       <div class="theme" role="group" aria-label="主題色調">
-        <button type="button" class="theme__dot" data-theme-set="gold"   aria-label="琥珀"   aria-pressed="true"></button>
+        <button type="button" class="theme__dot" data-theme-set="gold"   aria-label="琥珀"   aria-pressed="false"></button>
         <button type="button" class="theme__dot" data-theme-set="forest" aria-label="森林" aria-pressed="false"></button>
         <button type="button" class="theme__dot" data-theme-set="nebula" aria-label="星雲"   aria-pressed="false"></button>
         <button type="button" class="theme__dot" data-theme-set="ocean"  aria-label="海洋"  aria-pressed="false"></button>
-        <button type="button" class="theme__dot" data-theme-set="sweet"  aria-label="甜蜜"  aria-pressed="false"></button>
+        <button type="button" class="theme__dot" data-theme-set="sweet"  aria-label="甜蜜"  aria-pressed="true"></button>
       </div>
 
       <span>Shot on whatever we had</span>
@@ -338,7 +343,7 @@
   </div>
 
   <script>window.I18N = {"js.wallpaperOn": "桌布效果", "js.wallpaperOff": "看原圖", "js.enlarge": "（放大檢視）", "js.wallpaperAlt": "（桌布效果）", "js.missing": "缺少圖檔"};</script>
-  <script src="js/photos.js?v=b3bfa49883"></script>
-  <script src="js/main.js?v=2f597ab115"></script>
+  <script src="js/photos.js?v=257741370d"></script>
+  <script src="js/main.js?v=15fc516def"></script>
 </body>
 </html>

@@ -25,14 +25,19 @@
   <!-- Applies the saved palette before the first paint. It has to be
        inline and it has to be here: loaded from a file, or moved to
        the bottom with the other scripts, the page would paint in the
-       default gold and then jump. Kept to the one job for that
-       reason — js/main.js does the rest once the DOM exists.
+       default and then jump. Kept to the one job for that reason —
+       js/main.js does the rest once the DOM exists.
+
+       'sweet' is DEFAULT_THEME in js/main.js, repeated here because a
+       script this early cannot read it. It lives on :root, so leaving
+       the attribute off is how it is selected.
+
        localStorage throws outright in some privacy modes, so the
        whole thing sits in a try. -->
   <script>
     try {
       var t = localStorage.getItem('theme');
-      if (t && t !== 'gold') document.documentElement.setAttribute('data-theme', t);
+      if (t && t !== 'sweet') document.documentElement.setAttribute('data-theme', t);
     } catch (e) {}
   </script>
 </head>
@@ -160,11 +165,11 @@
            row reads; keeping DOM order and visual order together is
            also what keeps tabbing sane. -->
       <div class="theme" role="group" aria-label="{{theme.aria}}">
-        <button type="button" class="theme__dot" data-theme-set="gold"   aria-label="{{theme.gold}}"   aria-pressed="true"></button>
+        <button type="button" class="theme__dot" data-theme-set="gold"   aria-label="{{theme.gold}}"   aria-pressed="false"></button>
         <button type="button" class="theme__dot" data-theme-set="forest" aria-label="{{theme.forest}}" aria-pressed="false"></button>
         <button type="button" class="theme__dot" data-theme-set="nebula" aria-label="{{theme.nebula}}"   aria-pressed="false"></button>
         <button type="button" class="theme__dot" data-theme-set="ocean"  aria-label="{{theme.ocean}}"  aria-pressed="false"></button>
-        <button type="button" class="theme__dot" data-theme-set="sweet"  aria-label="{{theme.sweet}}"  aria-pressed="false"></button>
+        <button type="button" class="theme__dot" data-theme-set="sweet"  aria-label="{{theme.sweet}}"  aria-pressed="true"></button>
       </div>
 
       <nav class="lang" aria-label="{{lang.aria}}">
@@ -298,11 +303,11 @@
       </nav>
 
       <div class="theme" role="group" aria-label="{{theme.aria}}">
-        <button type="button" class="theme__dot" data-theme-set="gold"   aria-label="{{theme.gold}}"   aria-pressed="true"></button>
+        <button type="button" class="theme__dot" data-theme-set="gold"   aria-label="{{theme.gold}}"   aria-pressed="false"></button>
         <button type="button" class="theme__dot" data-theme-set="forest" aria-label="{{theme.forest}}" aria-pressed="false"></button>
         <button type="button" class="theme__dot" data-theme-set="nebula" aria-label="{{theme.nebula}}"   aria-pressed="false"></button>
         <button type="button" class="theme__dot" data-theme-set="ocean"  aria-label="{{theme.ocean}}"  aria-pressed="false"></button>
-        <button type="button" class="theme__dot" data-theme-set="sweet"  aria-label="{{theme.sweet}}"  aria-pressed="false"></button>
+        <button type="button" class="theme__dot" data-theme-set="sweet"  aria-label="{{theme.sweet}}"  aria-pressed="true"></button>
       </div>
 
       <span>{{footer.shot}}</span>
