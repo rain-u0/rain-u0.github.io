@@ -55,6 +55,8 @@ const PHOTOS = [
     t: { zh: '帕斯庫奇焦糖', en: 'Pascucci Caramel', ja: 'パスクッチのキャラメル', ko: '파스쿠찌 카라멜' } },
   { file: 'daegu_slow_turtle', cat: 'linger', w: 915, h: 1600, demo: true,
     t: { zh: '大邱 Slow Turtle', en: 'Slow Turtle, Daegu', ja: '大邱 Slow Turtle', ko: '대구 Slow Turtle' } },
+  { file: 'tiny_wedding', cat: 'linger', w: 914, h: 1600, demo: true,
+    t: { zh: '小小婚禮', en: 'Tiny Wedding', ja: '小さな結婚式', ko: '작은 결혼식' } },
 
   // ── travel — places with a name ──────────────────────────
   { file: 'boulevard_jourdan', cat: 'travel', w: 1179, h: 2066, demo: true,
@@ -95,6 +97,8 @@ const PHOTOS = [
     t: { zh: '首爾夜櫻', en: 'Seoul Night Bloom', ja: 'ソウルの夜桜', ko: '서울 밤 벚꽃' } },
   { file: 'tenjin_fukuoka', cat: 'travel', w: 909, h: 1600, demo: true,
     t: { zh: '福岡天神', en: 'Tenjin, Fukuoka', ja: '福岡 天神', ko: '후쿠오카 텐진' } },
+  { file: 'sunlit_pool', cat: 'travel', w: 915, h: 1600, demo: true,
+    t: { zh: '晨光泳池', en: 'Sunlit Pool', ja: '陽だまりのプール', ko: '햇살 가득한 수영장' } },
 
   // ── mood — no place name, light and atmosphere ───────────
   { file: 'city_trail', cat: 'mood', w: 2400, h: 3200, demo: true,
