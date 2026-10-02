@@ -80,11 +80,12 @@
   },
   "wall.collection": { "zh": "Collection", "en": "Collection", "ja": "Collection", "ko": "Collection" },
 
-  "filter.all":    { "zh": "全部", "en": "All",    "ja": "すべて", "ko": "전체" },
-  "filter.linger": { "zh": "消磨", "en": "Linger", "ja": "長居",   "ko": "머무름" },
-  "filter.travel": { "zh": "旅行", "en": "Travel", "ja": "旅",     "ko": "여행" },
-  "filter.mood":   { "zh": "氛圍", "en": "Mood",   "ja": "空気",   "ko": "분위기" },
-  "filter.anime":  { "zh": "動漫", "en": "Anime", "ja": "アニメ", "ko": "애니" },
+  "filter.all":       { "zh": "全部", "en": "All",    "ja": "すべて", "ko": "전체" },
+  "filter.linger":    { "zh": "消磨", "en": "Linger", "ja": "長居",   "ko": "머무름" },
+  "filter.travel":    { "zh": "旅行", "en": "Travel", "ja": "旅",     "ko": "여행" },
+  "filter.mood":      { "zh": "氛圍", "en": "Mood",   "ja": "空気",   "ko": "분위기" },
+  "filter.anime":     { "zh": "動漫", "en": "Anime", "ja": "アニメ", "ko": "애니" },
+  "filter.creatures": { "zh": "牠們", "en": "creatures", "ja": "いきもの", "ko": "작은 친구들" },
 
   "notes.heading": { "zh": "隨筆 Notes", "en": "Notes", "ja": "雑記 Notes", "ko": "단상 Notes" },
   "notes.aside": {

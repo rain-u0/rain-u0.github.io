@@ -131,4 +131,6 @@ const PHOTOS = [
     t: { zh: '約定・濃厚', en: 'Promise — Deep', ja: '約束・濃い', ko: '약속 짙은' } },
   { file: 'promise', cat: 'anime', w: 740, h: 1600, demo: true,
     t: { zh: '約定', en: 'Promise', ja: '約束', ko: '약속' } },
+
+  // ── creatures — animals, kept or wild ────────────────────
 ];
