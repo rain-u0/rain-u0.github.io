@@ -135,6 +135,13 @@
   "box.prev":  { "zh": "上一張", "en": "Previous", "ja": "前へ",   "ko": "이전" },
   "box.next":  { "zh": "下一張", "en": "Next",     "ja": "次へ",   "ko": "다음" },
 
+  "show.play": { "zh": "輪播", "en": "Slideshow", "ja": "スライドショー", "ko": "슬라이드쇼" },
+  "show.pace": { "zh": "每張停留時間", "en": "Time per photo", "ja": "1枚の表示時間", "ko": "사진당 표시 시간" },
+  "show.fast": { "zh": "5 秒", "en": "5 sec", "ja": "5秒", "ko": "5초" },
+  "show.slow": { "zh": "30 分鐘", "en": "30 min", "ja": "30分", "ko": "30분" },
+  "show.aria": { "zh": "輪播", "en": "Slideshow", "ja": "スライドショー", "ko": "슬라이드쇼" },
+  "show.hint": { "zh": "點一下任意處結束", "en": "Tap or press any key to stop", "ja": "どこかをタップで終了", "ko": "아무 곳이나 탭하면 종료" },
+
   "js.wallpaperOn":  { "zh": "桌布效果", "en": "As wallpaper", "ja": "壁紙で見る", "ko": "배경화면으로" },
   "js.wallpaperOff": { "zh": "看原圖",   "en": "See photo",    "ja": "写真に戻る", "ko": "사진 보기" },
   "js.enlarge":      { "zh": "（放大檢視）", "en": " (view larger)", "ja": "（拡大表示）", "ko": "(크게 보기)" },

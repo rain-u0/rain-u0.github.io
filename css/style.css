@@ -732,6 +732,61 @@ body.nav-open .nav-scrim { opacity: 1; }
    browser's own [hidden] and leave the button on screen. */
 .filters button[hidden] { display: none; }
 
+/* The slideshow button rides at the end of the filter row, pushed
+   right so it reads as acting on the row rather than being one more
+   category. Outlined in the accent so it is not mistaken for a
+   filter that happens to be off. */
+/* Anchors the pace menu under the button */
+.playwrap {
+  position: relative;
+  margin-left: auto;
+}
+
+.filters .filters__play {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  color: var(--accent);
+  border-color: currentColor;
+}
+
+.filters .filters__play:hover { color: var(--fg); border-color: var(--fg); }
+.filters__play .ico { width: 0.95em; height: 0.95em; }
+
+.filters .filters__play[aria-expanded="true"] { color: var(--fg); border-color: var(--fg); }
+
+/* Right-aligned to the button, since the button sits at the right
+   edge of the row and a left-aligned menu would run off a phone. */
+.playmenu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 5;
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.4rem;
+  background: rgb(var(--bg-raised-rgb));
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+  white-space: nowrap;
+}
+
+.playmenu[hidden] { display: none; }
+
+/* Undo the filter pill's uppercase tracking — these are numbers */
+.filters .playmenu button {
+  letter-spacing: 0.06em;
+  text-transform: none;
+  padding: 0.45rem 1rem;
+}
+
+.filters .playmenu button:hover {
+  color: var(--bg);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
 /* ── Photo masonry ────────────────────────────────────────── */
 /* CSS columns for masonry: no JS position maths, and portrait
    photos tile naturally. Note items flow down each column, then
@@ -1281,6 +1336,65 @@ body.nav-open .nav-scrim { opacity: 1; }
 .box__next  { right: clamp(0.6rem, 2vw, 2rem); top: 50%; margin-top: -1.5rem; }
 
 body.locked { overflow: hidden; }
+
+/* ── Slideshow ────────────────────────────────────────────── */
+/* Always black rather than --box-bg: photos are shown edge to edge
+   and any tint would read as part of them. No backdrop-filter — a
+   full-screen blur behind an opaque layer costs GPU time for nothing. */
+.show {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: #000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.45s var(--ease), visibility 0.45s;
+  cursor: none;
+}
+
+.show.open { opacity: 1; visibility: visible; }
+.show:focus { outline: none; }
+
+/* Stacked; the one with .on is the photo on screen. Only opacity
+   animates, which stays on the compositor. */
+.show__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  transition: opacity 1.2s var(--ease);
+}
+
+.show__img.on { opacity: 1; }
+
+/* The 30-minute pace is for leaving on a monitor: a slow dissolve
+   reads as a frame changing its picture rather than a cut. */
+.show--slow .show__img { transition-duration: 3s; }
+
+/* Says how to get out, then gets out of the way itself */
+.show__hint {
+  position: absolute;
+  bottom: clamp(1rem, 4vh, 2.4rem);
+  left: 0;
+  right: 0;
+  margin: 0;
+  text-align: center;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  color: rgb(255 255 255 / 0.7);
+  text-shadow: 0 1px 4px rgb(0 0 0 / 0.6);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.show.open .show__hint { animation: show-hint 3.2s var(--ease) 0.3s both; }
+
+@keyframes show-hint {
+  0%, 100% { opacity: 0; }
+  15%, 75% { opacity: 1; }
+}
 
 /* ── Respect the system reduced-motion setting ────────────── */
 @media (prefers-reduced-motion: reduce) {

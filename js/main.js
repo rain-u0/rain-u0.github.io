@@ -1,13 +1,14 @@
 /* ═══════════════════════════════════════════════════════════════
    rain_u.0 — behaviour script. No external libraries.
 
-   Four jobs:
+   Five jobs:
      1. Release the load lock — drop <html class="preload"> so
         transitions start applying
      2. Scroll reveal — IntersectionObserver adds .in to .reveal
      3. Gallery — built from PHOTOS in js/photos.js, plus filtering
      4. Lightbox — click to enlarge, arrows to move, Esc to close,
         W to toggle the wallpaper preview
+     5. Slideshow — random photos from the current category
    ═══════════════════════════════════════════════════════════════ */
 
 (function () {
@@ -159,7 +160,8 @@
       var btn = e.target.closest('button[data-filter]');
       if (!btn) return;
 
-      filtersEl.querySelectorAll('button').forEach(function (b) {
+      /* Only the filters — the slideshow button shares this row */
+      filtersEl.querySelectorAll('button[data-filter]').forEach(function (b) {
         b.setAttribute('aria-pressed', String(b === btn));
       });
 
@@ -301,6 +303,231 @@
       if (e.key === 'ArrowLeft')  step(-1);
       if (e.key === 'ArrowRight') step(1);
       if (e.key === 'w' || e.key === 'W') toggleWallpaper();
+    });
+  }
+
+  /* ── 5. Slideshow ───────────────────────────────────────── */
+  /* The button opens a choice of pace (5s or 30 min); picking one
+     starts the show. It plays `visible` — whatever the filters
+     currently show — in a
+     shuffled order, so nothing repeats until every photo has had its
+     turn. Costs nothing until started: no timer, no image requests.
+     While running it holds at most the photo on screen plus the next
+     one, and the timer stops whenever the tab is hidden.
+
+     Any pointer press, key or wheel ends it. Fullscreen and the
+     screen wake lock are both best-effort: iPhone Safari has neither
+     for a page element, and the slideshow simply fills the window. */
+  var show     = document.getElementById('show');
+  var playBtn  = document.getElementById('play');
+  var playMenu = document.getElementById('playmenu');
+
+  if (show && playBtn && playMenu) {
+    var showMs    = 5000;       /* set from the chosen data-interval */
+    var slots     = show.querySelectorAll('.show__img');
+    var front     = 0;          /* index into slots of the photo on screen */
+    var queue     = [];
+    var qi        = 0;
+    var showing   = false;
+    var showTimer = null;
+    var showToken = 0;          /* bumped per advance; stale loads check it */
+    var misses    = 0;          /* consecutive failed loads */
+    var wakeLock  = null;
+    var showFocus = null;
+
+    var srcOf = function (p) { return 'images/' + p.file + '.jpg'; };
+
+    var shuffle = function (a) {
+      for (var i = a.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+      }
+      return a;
+    };
+
+    var nextPhoto = function () {
+      if (qi >= queue.length) {
+        var last = queue[queue.length - 1];
+        shuffle(queue);
+        /* A reshuffle must not open with the photo that just closed
+           the previous round — that would read as the timer stalling. */
+        if (queue.length > 1 && queue[0] === last) {
+          queue[0] = queue[1]; queue[1] = last;
+        }
+        qi = 0;
+      }
+      return queue[qi++];
+    };
+
+    var schedule = function () {
+      clearTimeout(showTimer);
+      showTimer = setTimeout(advance, showMs);
+    };
+
+    /* Load the next photo into the hidden slot, wait until it is
+       decoded, then cross-fade. Waiting for decode is what keeps a
+       large JPEG from painting in halfway through the fade. */
+    var advance = function () {
+      var token = ++showToken;
+      var p = nextPhoto();
+      var img = slots[1 - front];
+      img.src = srcOf(p);
+      img.alt = (p.t && p.t[LANG]) || '';
+
+      var ready = img.decode ? img.decode() : new Promise(function (ok, no) {
+        img.onload = ok; img.onerror = no;
+      });
+
+      ready.then(function () {
+        if (token !== showToken || !showing) return;
+        misses = 0;
+        img.classList.add('on');
+        slots[front].classList.remove('on');
+        front = 1 - front;
+        /* Warm the cache for the one after, so its decode is quick */
+        if (queue.length > 1) new Image().src = srcOf(queue[qi % queue.length]);
+        schedule();
+      }, function () {
+        if (token !== showToken || !showing) return;
+        /* A missing file: skip it, but give up if nothing loads at all
+           rather than spin through the list forever. */
+        if (++misses >= queue.length) { stopShow(); return; }
+        advance();
+      });
+    };
+
+    var lockScreen = function () {
+      if (!navigator.wakeLock) return;
+      navigator.wakeLock.request('screen').then(function (l) {
+        if (showing) wakeLock = l; else l.release();
+      }, function () {});
+    };
+
+    var startShow = function (ms) {
+      if (showing || !visible.length) return;
+      showing = true;
+      showMs = ms;
+      /* Anything over a minute is the leave-it-on-a-monitor pace */
+      show.classList.toggle('show--slow', ms >= 60000);
+      queue = shuffle(visible.slice());
+      qi = 0;
+      misses = 0;
+      showFocus = playBtn;
+
+      show.classList.add('open');
+      show.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('locked');
+      show.focus();
+
+      if (show.requestFullscreen) show.requestFullscreen().catch(function () {});
+      lockScreen();
+      advance();
+
+      /* Armed on the next tick, so the press that started the show
+         does not also end it. */
+      setTimeout(function () {
+        if (!showing) return;
+        document.addEventListener('pointerdown', onStopInput, true);
+        document.addEventListener('keydown', onStopInput, true);
+        document.addEventListener('wheel', onStopInput, true);
+      }, 0);
+    };
+
+    var stopShow = function () {
+      if (!showing) return;
+      showing = false;
+      showToken++;
+      clearTimeout(showTimer);
+
+      document.removeEventListener('pointerdown', onStopInput, true);
+      document.removeEventListener('keydown', onStopInput, true);
+      document.removeEventListener('wheel', onStopInput, true);
+
+      show.classList.remove('open');
+      show.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('locked');
+
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(function () {});
+      }
+      if (wakeLock) { wakeLock.release().catch(function () {}); wakeLock = null; }
+
+      /* Clear the slots once faded out, so the next start does not
+         flash the last photo of this one. */
+      setTimeout(function () {
+        if (showing) return;
+        for (var i = 0; i < slots.length; i++) {
+          slots[i].classList.remove('on');
+          slots[i].removeAttribute('src');
+        }
+      }, 500);
+
+      if (showFocus && showFocus.focus) showFocus.focus();
+    };
+
+    /* Swallow the key that stops it, so Space does not then scroll
+       the page and an arrow does not move anything underneath. The
+       overlay is still on screen while it fades, so a tap lands on
+       it rather than on whatever is behind. */
+    var onStopInput = function (e) {
+      if (e.type === 'keydown') e.preventDefault();
+      stopShow();
+    };
+
+    /* ── Pace menu ── */
+    var menuOpen = function () { return !playMenu.hidden; };
+
+    var setMenu = function (open) {
+      playMenu.hidden = !open;
+      playBtn.setAttribute('aria-expanded', String(open));
+      if (open) {
+        playMenu.querySelector('button').focus();
+        document.addEventListener('pointerdown', onMenuOutside, true);
+      } else {
+        document.removeEventListener('pointerdown', onMenuOutside, true);
+      }
+    };
+
+    var onMenuOutside = function (e) {
+      if (!e.target.closest('.playwrap')) setMenu(false);
+    };
+
+    playBtn.addEventListener('click', function () { setMenu(!menuOpen()); });
+
+    playMenu.addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-interval]');
+      if (!b) return;
+      setMenu(false);
+      startShow(Number(b.dataset.interval) || 5000);
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape' || !menuOpen()) return;
+      setMenu(false);
+      playBtn.focus();
+    });
+
+    /* Switching category leaves nothing for the menu to apply to */
+    if (filtersEl) filtersEl.addEventListener('click', function (e) {
+      if (e.target.closest('button[data-filter]') && menuOpen()) setMenu(false);
+    });
+
+    /* Esc while fullscreen is taken by the browser and never reaches
+       keydown — leaving fullscreen is the only signal we get. */
+    document.addEventListener('fullscreenchange', function () {
+      if (showing && !document.fullscreenElement) stopShow();
+    });
+
+    /* Pause while the tab is out of sight. The browser drops the wake
+       lock on hide, so it has to be asked for again on return. */
+    document.addEventListener('visibilitychange', function () {
+      if (!showing) return;
+      if (document.hidden) {
+        clearTimeout(showTimer);
+      } else {
+        schedule();
+        lockScreen();
+      }
     });
   }
 
