@@ -99,6 +99,8 @@ const PHOTOS = [
     t: { zh: '福岡天神', en: 'Tenjin, Fukuoka', ja: '福岡 天神', ko: '후쿠오카 텐진' } },
   { file: 'sunlit_pool', cat: 'travel', w: 915, h: 1600, demo: true,
     t: { zh: '晨光泳池', en: 'Sunlit Pool', ja: '陽だまりのプール', ko: '햇살 가득한 수영장' } },
+  { file: 'hommachi_yanagawa', cat: 'travel', w: 1201, h: 1600, demo: true,
+    t: { zh: '柳川本町', en: 'Yanagawa, Hommachi', ja: '柳川本町', ko: '야나가와 혼마치' } },
 
   // ── mood — no place name, light and atmosphere ───────────
   { file: 'city_trail', cat: 'mood', w: 2400, h: 3200, demo: true,
