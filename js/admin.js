@@ -462,6 +462,16 @@
            photos.js write so the tree is never half-updated. */
         pending: {},
         removed: [],
+        /* Wallpaper screenshots replaced on photos already in the repo,
+           by filename: { b64, preview }. Only the _demo.jpg is written —
+           photos.js records the photo's dimensions, never the
+           screenshot's, so nothing else has to change with it. */
+        swapped: {},
+        /* Previews of screenshots replaced this session, kept past the
+           save that sends them: the site serves the old file until the
+           deploy finishes, and a thumbnail that snaps back to it would
+           read as the save having failed. */
+        demoSeen: {},
         catsAdded: [],
         catsRemoved: [],
         /* Filenames whose images are, or are about to be, in the repo.
@@ -587,6 +597,7 @@
     r.appendChild(body);
 
     var side = el('div', 'row__side');
+    side.appendChild(demoTile(p));
     var sel = el('select', 'row__cat');
     state.cats.forEach(function (c) {
       var o = document.createElement('option');
@@ -617,6 +628,7 @@
                    'Nothing happens until you save.')) return;
       state.photos.splice(state.photos.indexOf(p), 1);
       delete state.pending[p.file];
+      delete state.swapped[p.file];
       if (state.known[p.file]) {
         state.removed.push('images/' + p.file + '.jpg',
                            'images/' + p.file + '_demo.jpg');
@@ -631,6 +643,104 @@
 
     wireDrag(r, p);
     return r;
+  }
+
+  /* ── Replacing a wallpaper screenshot ──────────────────────
+     The row's second thumbnail is the current _demo.jpg; click it or
+     drop a file on it to stage a replacement. Same rules and the same
+     processing as the add sheet, and like every other edit nothing
+     reaches the repo until Save.
+
+     A photo still waiting for its first save has no file in the repo
+     to replace, so its staged screenshot is swapped in place instead. */
+  function demoTile(p) {
+    var pend = state.pending[p.file];
+    var swap = state.swapped[p.file];
+
+    var tile = el('label', 'row__demo');
+    tile.title = 'Replace the wallpaper screenshot';
+
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.jpg,.jpeg,.png,.webp';
+    input.hidden = true;
+    tile.appendChild(input);
+
+    var img = document.createElement('img');
+    img.alt = '';
+    img.loading = 'lazy';
+    /* Otherwise grabbing the thumbnail drags the image, not the row */
+    img.draggable = false;
+    img.src = swap ? swap.preview
+            : pend ? pend.demoPreview
+            : state.demoSeen[p.file] || ('images/' + p.file + '_demo.jpg');
+    tile.appendChild(img);
+
+    var cap = el('span', 'row__demo-cap', swap ? 'Replaced' : 'Wallpaper');
+    tile.appendChild(cap);
+    if (swap) tile.classList.add('is-swapped');
+
+    var take = function (file) {
+      if (!file) return;
+      var bad = checkName_(file);
+      if (bad) { toast(bad, 'bad', 0); return; }
+      cap.textContent = 'Processing…';
+
+      sniff(file).then(function (wrong) {
+        if (wrong) throw new Error(wrong);
+        return processImage(file);
+      }).then(function (out) {
+        return blobToB64(out.blob).then(function (b64) {
+          var preview = URL.createObjectURL(out.blob);
+          /* Looked up again: a reload or a delete while this was
+             processing would leave the closure holding a stale row. */
+          var nowPend = state.pending[p.file];
+          if (state.photos.indexOf(p) === -1) { URL.revokeObjectURL(preview); return; }
+          if (nowPend) {
+            if (nowPend.demoPreview) URL.revokeObjectURL(nowPend.demoPreview);
+            nowPend.demoB64 = b64;
+            nowPend.demoPreview = preview;
+          } else {
+            var old = state.swapped[p.file];
+            if (old && state.demoSeen[p.file] !== old.preview) URL.revokeObjectURL(old.preview);
+            state.swapped[p.file] = { b64: b64, preview: preview };
+          }
+          setDirty(true);
+          render();
+          toast('Wallpaper for ' + p.file + ' replaced. Save to publish it.', 'ok');
+        });
+      }).catch(function (e) {
+        cap.textContent = swap ? 'Replaced' : 'Wallpaper';
+        toast(/\.$/.test(e.message) ? e.message
+          : 'Could not read ' + file.name + '. If it is not ' +
+            ACCEPT_LABEL + ', convert it first. (' + e.message + ')', 'bad', 0);
+      });
+    };
+
+    input.addEventListener('change', function () { take(input.files[0]); });
+
+    /* A file dragged in from outside, as opposed to a row being
+       reordered — the row's own handlers only act on `dragging`. */
+    var isFile = function (e) {
+      return !dragging && e.dataTransfer &&
+             Array.prototype.indexOf.call(e.dataTransfer.types, 'Files') !== -1;
+    };
+    tile.addEventListener('dragover', function (e) {
+      if (!isFile(e)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      tile.classList.add('is-over');
+    });
+    tile.addEventListener('dragleave', function () { tile.classList.remove('is-over'); });
+    tile.addEventListener('drop', function (e) {
+      if (!isFile(e)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      tile.classList.remove('is-over');
+      take(e.dataTransfer.files[0]);
+    });
+
+    return tile;
   }
 
   /* ── Reordering ───────────────────────────────────────────── */
@@ -685,6 +795,10 @@
     var bits = [];
     var added = Object.keys(state.pending).length;
     if (added) bits.push('add ' + added + ' photo' + (added > 1 ? 's' : ''));
+    var swapped = Object.keys(state.swapped).length;
+    if (swapped) {
+      bits.push('replace ' + swapped + ' wallpaper screenshot' + (swapped > 1 ? 's' : ''));
+    }
     if (state.removed.length) {
       bits.push('remove ' + (state.removed.length / 2) + ' photo' +
                 (state.removed.length > 2 ? 's' : ''));
@@ -727,6 +841,13 @@
       state.known[file] = true;
     });
 
+    var sentSwapped = {};
+    Object.keys(state.swapped).forEach(function (file) {
+      var s = state.swapped[file];
+      writes.push({ path: 'images/' + file + '_demo.jpg', b64: s.b64 });
+      sentSwapped[file] = s;
+    });
+
     /* Snapshot what is going out. Clearing the queues wholesale on
        reply would discard anything added to them in the meantime —
        a photo deleted mid-save would lose its scheduled file removal
@@ -743,6 +864,11 @@
     commit(writes, state.removed, commitMessage())
       .then(function () {
         sentPending.forEach(function (f) { delete state.pending[f]; });
+        /* Only if it was not replaced again while the save was out */
+        Object.keys(sentSwapped).forEach(function (f) {
+          state.demoSeen[f] = sentSwapped[f].preview;
+          if (state.swapped[f] === sentSwapped[f]) delete state.swapped[f];
+        });
         state.removed     = without(state.removed, sentRemoved);
         state.catsAdded   = without(state.catsAdded, sentAdded);
         state.catsRemoved = without(state.catsRemoved, sentGone);
@@ -931,9 +1057,12 @@
     state.pending[file] = {
       photoB64: slots.photo.b64,
       demoB64:  slots.demo.b64,
-      preview:  slots.photo.preview
+      preview:  slots.photo.preview,
+      demoPreview: slots.demo.preview
     };
-    slots.photo = null;          /* the preview URL now belongs to the row */
+    /* Both preview URLs now belong to the row */
+    slots.photo = null;
+    slots.demo = null;
     state.photos.push(photo);
 
     setDirty(true);

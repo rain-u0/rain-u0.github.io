@@ -220,7 +220,18 @@ button, input, select { font-family: inherit; font-size: inherit; color: inherit
   pointer-events: none;
 }
 
-.row__side { display: flex; flex-direction: column; gap: 0.4rem; align-items: stretch; }
+/* The wallpaper tile sits to the left of the select and the delete
+   button, spanning both, rather than stacked above them — stacked, it
+   roughly doubled the height of every row. */
+.row__side {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto 1fr;
+  align-content: start;
+  align-items: start;
+  gap: 0.4rem;
+}
+.row__side .row__demo { grid-row: span 2; }
 
 .row__cat {
   padding: 0.42rem 0.5rem;
@@ -262,6 +273,39 @@ button, input, select { font-family: inherit; font-size: inherit; color: inherit
   transition: color 0.25s var(--ease), border-color 0.25s var(--ease);
 }
 .row__del:hover { color: var(--danger); border-color: var(--danger); }
+
+/* ── Row wallpaper screenshot ─────────────────────────────── */
+/* Smaller than the photo thumbnail beside the titles, so the two are
+   not mistaken for each other; captioned so it says what it is. */
+.row__demo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.3rem;
+  border: 1px dashed var(--line);
+  border-radius: 0.35rem;
+  cursor: pointer;
+  transition: border-color 0.25s var(--ease);
+}
+.row__demo:hover,
+.row__demo.is-over { border-color: var(--accent); }
+.row__demo.is-swapped { border-style: solid; border-color: var(--ok); }
+
+.row__demo img {
+  width: 40px;
+  aspect-ratio: 9 / 19.5;
+  object-fit: cover;
+  border-radius: 0.25rem;
+  background: var(--bg-raised);
+}
+
+.row__demo-cap {
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  color: var(--fg-faint);
+}
+.row__demo.is-swapped .row__demo-cap { color: var(--ok); }
 
 /* A row staged for deletion stays visible until the save that carries
    it out, so the change can still be reconsidered by reloading. */
@@ -439,8 +483,12 @@ button, input, select { font-family: inherit; font-size: inherit; color: inherit
      select and a button have room to sit side by side. */
   .row__side {
     grid-column: 1 / -1;
+    display: flex;
     flex-direction: row;
     justify-content: flex-end;
   }
   .row__cat { flex: 1; min-width: 0; }
+  /* Beside the select and the button now, so lay it on its side */
+  .row__demo { flex-direction: row; padding: 0.2rem 0.45rem 0.2rem 0.2rem; }
+  .row__demo img { width: 22px; }
 }
