@@ -137,4 +137,6 @@ const PHOTOS = [
   // ── creatures — animals, kept or wild ────────────────────
   { file: 'smiling_snowball', cat: 'creatures', w: 911, h: 1600, demo: true,
     t: { zh: '會笑的雪球', en: 'Smiling Snowball', ja: '笑う雪玉', ko: '웃는 눈뭉치' } },
+  { file: 'mocha_gaze', cat: 'creatures', w: 738, h: 1600, demo: true,
+    t: { zh: '摩卡凝視', en: '摩卡凝視', ja: 'モカのまなざし', ko: '모카빛 눈맞춤' } },
 ];
