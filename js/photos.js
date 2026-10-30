@@ -57,6 +57,8 @@ const PHOTOS = [
     t: { zh: '大邱 Slow Turtle', en: 'Slow Turtle, Daegu', ja: '大邱 Slow Turtle', ko: '대구 Slow Turtle' } },
   { file: 'tiny_wedding', cat: 'linger', w: 914, h: 1600, demo: true,
     t: { zh: '小小婚禮', en: 'Tiny Wedding', ja: '小さな結婚式', ko: '작은 결혼식' } },
+  { file: 'korea_yahwa_kkotjam', cat: 'linger', w: 922, h: 1600, demo: true,
+    t: { zh: '韓國 야화 혼술바・꽃잠', en: 'Kkotjam, Yahwa Honsulbar, Korea', ja: '韓国 야화 혼술바・꽃잠', ko: '야화 혼술바・꽃잠' } },
 
   // ── travel — places with a name ──────────────────────────
   { file: 'boulevard_jourdan', cat: 'travel', w: 1179, h: 2066, demo: true,
