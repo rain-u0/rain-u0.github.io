@@ -139,4 +139,6 @@ const PHOTOS = [
     t: { zh: '會笑的雪球', en: 'Smiling Snowball', ja: '笑う雪玉', ko: '웃는 눈뭉치' } },
   { file: 'mocha_gaze', cat: 'creatures', w: 738, h: 1600, demo: true,
     t: { zh: '摩卡凝視', en: 'Mocha Gaze', ja: 'モカのまなざし', ko: '모카빛 눈맞춤' } },
+  { file: 'meadow_snowball', cat: 'creatures', w: 922, h: 1600, demo: true,
+    t: { zh: '草原雪球', en: 'Meadow Snowball', ja: '草原の雪玉', ko: '초원의 눈뭉치' } },
 ];
