@@ -20,7 +20,7 @@
   <title>rain_u.0</title>
   <meta name="description" content="휴대폰 배경화면과 단상, 그리고 흩어진 기록.">
 
-  <link rel="stylesheet" href="css/style.css?v=2048ad7199">
+  <link rel="stylesheet" href="css/style.css?v=0ce3939eb5">
 
   <!-- Applies the saved palette before the first paint. It has to be
        inline and it has to be here: loaded from a file, or moved to
@@ -83,6 +83,14 @@
     <symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M7 4.5v15l12-7.5z"/>
+    </symbol>
+
+    <!-- File: a sheet with its top corner folded. Used by the file
+         name in the lightbox, which is the key to the cloud folder. -->
+    <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/>
+      <path d="M14 3v5h5"/>
     </symbol>
 
     <!-- Info: circle with a bang. Used by the disclaimer note. -->
@@ -359,6 +367,18 @@
     <img class="box__img" id="box-img" alt="">
     <div class="box__bar">
       <div class="box__cap" id="box-cap"></div>
+      <!-- The file name is how a photo is found in the cloud folder of
+           originals, which knows nothing of titles. Always the photo's
+           own name, even with the wallpaper shot on screen — the
+           folder holds originals, not _demo files. -->
+      <!-- The icon stands in for the word on screen; the word stays
+           for screen readers, which would otherwise announce a bare
+           string with nothing to say what it is. -->
+      <div class="box__file">
+        <svg class="ico" aria-hidden="true"><use href="#i-file"/></svg>
+        <span class="sr-only">파일명</span>
+        <b id="box-file"></b>
+      </div>
       <!-- Only shown for photos marked demo: true in photos.js -->
       <button type="button" class="box__mode" id="box-mode" aria-pressed="false" hidden>
         배경화면으로
@@ -378,7 +398,7 @@
   </div>
 
   <script>window.I18N = {"js.wallpaperOn": "배경화면으로", "js.wallpaperOff": "사진 보기", "js.enlarge": "(크게 보기)", "js.wallpaperAlt": "(배경화면)", "js.missing": "이미지 없음"};</script>
-  <script src="js/photos.js?v=c5e3e48556"></script>
-  <script src="js/main.js?v=00b757aa26"></script>
+  <script src="js/photos.js?v=db6f55c050"></script>
+  <script src="js/main.js?v=e09e422267"></script>
 </body>
 </html>

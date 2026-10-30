@@ -85,6 +85,14 @@
       <path d="M7 4.5v15l12-7.5z"/>
     </symbol>
 
+    <!-- File: a sheet with its top corner folded. Used by the file
+         name in the lightbox, which is the key to the cloud folder. -->
+    <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/>
+      <path d="M14 3v5h5"/>
+    </symbol>
+
     <!-- Info: circle with a bang. Used by the disclaimer note. -->
     <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -353,6 +361,18 @@
     <img class="box__img" id="box-img" alt="">
     <div class="box__bar">
       <div class="box__cap" id="box-cap"></div>
+      <!-- The file name is how a photo is found in the cloud folder of
+           originals, which knows nothing of titles. Always the photo's
+           own name, even with the wallpaper shot on screen — the
+           folder holds originals, not _demo files. -->
+      <!-- The icon stands in for the word on screen; the word stays
+           for screen readers, which would otherwise announce a bare
+           string with nothing to say what it is. -->
+      <div class="box__file">
+        <svg class="ico" aria-hidden="true"><use href="#i-file"/></svg>
+        <span class="sr-only">{{box.file}}</span>
+        <b id="box-file"></b>
+      </div>
       <!-- Only shown for photos marked demo: true in photos.js -->
       <button type="button" class="box__mode" id="box-mode" aria-pressed="false" hidden>
         {{js.wallpaperOn}}

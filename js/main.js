@@ -209,6 +209,7 @@
   var boxImg   = document.getElementById('box-img');
   var boxCap   = document.getElementById('box-cap');
   var boxMode  = document.getElementById('box-mode');
+  var boxFile  = document.getElementById('box-file');
   var current  = -1;
   var lastFocus = null;
 
@@ -254,6 +255,8 @@
     boxImg.src = 'images/' + p.file + suffix + '.jpg';
     boxImg.alt = main + (dual ? ' ' + sub : '') +
                  (wallpaper ? t('js.wallpaperAlt') : '');
+
+    if (boxFile) boxFile.textContent = p.file;
 
     boxCap.innerHTML = dual ? '<b></b> — <span></span>' : '<b></b>';
     boxCap.querySelector('b').textContent = main;

@@ -1275,6 +1275,30 @@ body.nav-open .nav-scrim { opacity: 1; }
 
 .box__cap b { color: var(--box-fg); font-weight: 400; }
 
+/* Quieter than the caption: it is a lookup key, not a title. The
+   name itself selects in one tap, so it can be copied straight into
+   the cloud folder's search. */
+.box__file {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35em;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: var(--box-dim);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.box__file .ico { width: 1.15em; height: 1.15em; }
+
+.box__file b {
+  color: var(--box-fg);
+  font-weight: 400;
+  user-select: all;
+  -webkit-user-select: all;
+}
+
 /* This one is a pill, so it must not pick up the round styling
    applied to the three nav buttons below. */
 .box__mode {
@@ -1302,6 +1326,12 @@ body.nav-open .nav-scrim { opacity: 1; }
 
 @media (max-width: 560px) {
   .box__bar { flex-direction: column; gap: 0.7rem; text-align: center; }
+  /* Stacked, the caption, file name and toggle stand about three
+     lines tall, and the image at its desktop 84vh ran underneath
+     them. Reserve the room as padding and let the image fill what is
+     left; the top padding clears the close button the same way. */
+  .box { padding: 4.8rem 1rem 10rem; }
+  .box__img { max-height: 100%; }
 }
 
 /* shared by every lightbox button */
@@ -1394,6 +1424,20 @@ body.locked { overflow: hidden; }
 @keyframes show-hint {
   0%, 100% { opacity: 0; }
   15%, 75% { opacity: 1; }
+}
+
+/* Read aloud, never drawn. For a label whose job an icon does on
+   screen. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* ── Respect the system reduced-motion setting ────────────── */
