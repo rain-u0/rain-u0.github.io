@@ -133,6 +133,8 @@ const PHOTOS = [
     t: { zh: '靜靜落雪', en: 'Silent Snow', ja: 'しずかに降る雪', ko: '조용히 내리는 눈' } },
   { file: 'ebbing_glow', cat: 'mood', w: 907, h: 1600, demo: true,
     t: { zh: '退潮微光', en: 'Ebbing Glow', ja: '引き潮のひかり', ko: '썰물의 은은한 빛' } },
+  { file: 'quiet_hall', cat: 'mood', w: 914, h: 1600, demo: true,
+    t: { zh: '靜廳', en: 'Quiet Hall', ja: '静かな広間', ko: '고요한 홀' } },
 
   // ── anime — anime-inspired ───────────────────────────────
   { file: 'promise_deep', cat: 'anime', w: 740, h: 1600, demo: true,
