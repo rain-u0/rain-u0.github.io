@@ -100,20 +100,38 @@
     frame.className = 'shot__frame';
     frame.style.setProperty('--ar', ratio.toFixed(4));
 
+    /* <picture> so browsers that read AVIF fetch the smaller copy
+       the deploy writes (tools/avif.js) and the rest take the JPEG.
+       loading is set before src, so the request is lazy from the
+       start. */
+    var pic = document.createElement('picture');
+    var avif = document.createElement('source');
+    avif.type = 'image/avif';
+    avif.srcset = 'images/' + photo.file + '.avif';
     var img = document.createElement('img');
-    img.src = 'images/' + photo.file + '.jpg';
     img.alt = titleMain + (showEn ? ' ' + titleEn : '');
     img.loading = 'lazy';       /* native lazy loading */
     img.decoding = 'async';
     img.width = photo.w || 1200;
     img.height = photo.h || 1700;
+    pic.appendChild(avif);
+    pic.appendChild(img);
+    img.src = 'images/' + photo.file + '.jpg';
 
-    /* fade in and unblur only once decoded */
+    /* fade in only once decoded */
     img.addEventListener('load', function () { img.classList.add('loaded'); });
 
-    /* If the file isn't in images/ yet, show a hint instead of a
-       broken image */
     img.addEventListener('error', function () {
+      /* A browser does not fall back from a <source> that fails to
+         load, so retry with the JPEG alone. This is the normal path
+         on a local preview, where no AVIF has been written. */
+      if (avif.parentNode) {
+        pic.removeChild(avif);
+        img.src = 'images/' + photo.file + '.jpg';
+        return;
+      }
+      /* If the file isn't in images/ yet, show a hint instead of a
+         broken image */
       img.classList.add('failed');
       img.removeAttribute('src');
       btn.classList.add('is-missing');
@@ -131,7 +149,7 @@
     cap.querySelector('b').textContent = titleMain;
     if (showEn) cap.querySelector('small').textContent = titleEn;
 
-    frame.appendChild(img);
+    frame.appendChild(pic);
     frame.appendChild(missing);
     btn.appendChild(frame);
     btn.appendChild(cap);
@@ -204,6 +222,23 @@
   var totalEl = document.getElementById('photo-total');
   if (totalEl) totalEl.textContent = photos.length;
 
+  /* ── AVIF or JPEG ───────────────────────────────────────── */
+  /* The deploy writes an AVIF beside every JPEG (tools/avif.js).
+     Gallery tiles choose with <picture>; the lightbox and slideshow
+     set src directly, so they ask this instead. Probing a real file
+     answers both questions at once — does this browser read AVIF,
+     and does this copy of the site have any (a local preview does
+     not). It settles long before anyone opens a photo; until then,
+     JPEG. */
+  var useAvif = false;
+  var probe = new Image();
+  probe.onload = function () { useAvif = probe.naturalWidth > 0; };
+  probe.src = 'images/me.avif';
+
+  function imgUrl(name) {
+    return 'images/' + name + (useAvif ? '.avif' : '.jpg');
+  }
+
   /* ── 4. Lightbox ────────────────────────────────────────── */
   var box      = document.getElementById('box');
   var boxImg   = document.getElementById('box-img');
@@ -253,7 +288,7 @@
     var sub  = (p.t && p.t.en) || '';
     var dual = LANG !== 'en' && sub && sub !== main;
 
-    boxImg.src = 'images/' + p.file + suffix + '.jpg';
+    boxImg.src = imgUrl(p.file + suffix);
     boxImg.alt = main + (dual ? ' ' + sub : '') +
                  (wallpaper ? t('js.wallpaperAlt') : '');
 
@@ -272,7 +307,7 @@
        that is already downloaded */
     [-1, 1].forEach(function (d) {
       var n = visible[(current + d + visible.length) % visible.length];
-      if (n) new Image().src = 'images/' + n.file + (wallpaper && n.demo ? '_demo' : '') + '.jpg';
+      if (n) new Image().src = imgUrl(n.file + (wallpaper && n.demo ? '_demo' : ''));
     });
   }
 
@@ -300,6 +335,11 @@
     /* If the wallpaper shot is missing, fall back to the photo
        rather than leaving a broken image on screen */
     boxImg.addEventListener('error', function () {
+      /* An AVIF that didn't load: the same image as JPEG first */
+      if (/\.avif$/.test(boxImg.src)) {
+        boxImg.src = boxImg.src.replace(/\.avif$/, '.jpg');
+        return;
+      }
       if (wallpaper) { wallpaper = false; showCurrent(); }
     });
 
@@ -438,7 +478,7 @@
     var wakeLock  = null;
     var showFocus = null;
 
-    var srcOf = function (p) { return 'images/' + p.file + '.jpg'; };
+    var srcOf = function (p) { return imgUrl(p.file); };
 
     var shuffle = function (a) {
       for (var i = a.length - 1; i > 0; i--) {

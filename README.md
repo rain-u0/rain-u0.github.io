@@ -18,6 +18,7 @@ js/photos.js        the photo list, with titles in all four languages
 js/main.js          scroll reveal, gallery, lightbox, nav indicator
 images/             46 photos + 46 wallpaper screenshots + me.jpg
 tools/optimize.sh   turns source photos into web-ready files
+tools/avif.js       AVIF copies of every JPEG, written at deploy time
 tools/download.sh   one-off fetch from the shared Drive folder (archived)
 ```
 
@@ -223,6 +224,12 @@ runtime (`js/main.js`). Add a row and every count updates.
 The `—` in `<span id="photo-total">—</span>` is only a placeholder for
 before the script runs.
 
+**AVIF copies are made for you.** Only ever add JPEGs. When the site
+deploys, `tools/avif.js` writes an AVIF beside each one, about 38%
+smaller with no visible difference, and the page serves those to
+browsers that can read them (iOS 16+, current Chrome and Firefox).
+Nothing in `images/` changes, and you never commit an `.avif`.
+
 ---
 
 ## Adding a category
@@ -408,6 +415,10 @@ python3 -m http.server 8000
 ```
 
 Then <http://localhost:8000>.
+
+A local preview has no AVIF copies, since those are only written at
+deploy time, so every image is served as JPEG. The browser console
+will show a 404 for each `.avif` it tried first. That is expected.
 
 ---
 

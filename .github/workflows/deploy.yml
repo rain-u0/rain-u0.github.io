@@ -68,6 +68,28 @@ jobs:
           cp index.html index-en.html index-ja.html index-ko.html _site/
           cp adrain.html _site/
           cp -r css js images _site/
+
+      # Encoding takes about a second a photo, so keep the results
+      # between runs; tools/avif.js keys them by the JPEG's content,
+      # so only new or replaced photos are encoded. The key changes
+      # whenever any JPEG does, and restore-keys picks up the most
+      # recent cache regardless — a stale entry is just never read.
+      - uses: actions/cache@v4
+        with:
+          path: .avif-cache
+          key: avif-${{ hashFiles('images/*.jpg') }}
+          restore-keys: avif-
+
+      # AVIF copies of every photo, about 38% smaller at no visible
+      # cost — see tools/avif.js. sharp is pinned: its encoder is the
+      # one the quality setting was measured with.
+      - name: Encode AVIF copies
+        run: |
+          npm install --no-save --no-package-lock sharp@0.33.5
+          node tools/avif.js _site/images .avif-cache
+
+      - name: List what is deployed
+        run: |
           echo "--- deploying ---"
           find _site -maxdepth 1 -mindepth 1 | sort
           echo "total: $(du -sh _site | cut -f1)"

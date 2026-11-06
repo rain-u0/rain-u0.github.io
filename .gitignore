@@ -9,3 +9,8 @@ tools/photos-data.txt
 # Finder writes one of these into every folder it opens, and it
 # lists the directory's contents — including files since deleted.
 .DS_Store
+
+# sharp, installed only to run tools/avif.js locally (the deploy
+# workflow installs its own), and that script's encode cache.
+node_modules/
+.avif-cache/
