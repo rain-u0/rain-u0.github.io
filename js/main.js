@@ -6,8 +6,8 @@
         transitions start applying
      2. Scroll reveal — IntersectionObserver adds .in to .reveal
      3. Gallery — built from PHOTOS in js/photos.js, plus filtering
-     4. Lightbox — click to enlarge, arrows to move, Esc to close,
-        W to toggle the wallpaper preview
+     4. Lightbox — click to enlarge, arrows or swipe to move, Esc
+        to close, W to toggle the wallpaper preview
      5. Slideshow — random photos from the current category
    ═══════════════════════════════════════════════════════════════ */
 
@@ -222,6 +222,7 @@
     if (!box || i < 0 || i >= visible.length) return;
     lastFocus = document.activeElement;
     current = i;
+    boxImg.style.transform = boxImg.style.transition = '';
     showCurrent();
     box.classList.add('open');
     box.setAttribute('aria-hidden', 'false');
@@ -266,6 +267,13 @@
       boxMode.setAttribute('aria-pressed', String(wallpaper));
       boxMode.textContent = wallpaper ? t('js.wallpaperOff') : t('js.wallpaperOn');
     }
+
+    /* Warm both neighbours, so a swipe or arrow lands on an image
+       that is already downloaded */
+    [-1, 1].forEach(function (d) {
+      var n = visible[(current + d + visible.length) % visible.length];
+      if (n) new Image().src = 'images/' + n.file + (wallpaper && n.demo ? '_demo' : '') + '.jpg';
+    });
   }
 
   function toggleWallpaper() {
@@ -307,6 +315,98 @@
       if (e.key === 'ArrowRight') step(1);
       if (e.key === 'w' || e.key === 'W') toggleWallpaper();
     });
+
+    /* Swipe on touch screens. The photo follows the finger; past a
+       fifth of the width, or on a quick flick, it slides out and the
+       neighbour slides in from the other side. Pinch-zoom stays the
+       browser's: two fingers, or a page already zoomed in, never
+       start a swipe. */
+    var SLIDE_MS = 220;
+    var drag = null;
+    var sliding = false;
+
+    var moveImg = function (x, ms) {
+      boxImg.style.transition = ms ? 'transform ' + ms + 'ms var(--ease)' : 'none';
+      boxImg.style.transform = x ? 'translate3d(' + x + 'px, 0, 0)' : '';
+    };
+
+    /* Back to centre, then hand transitions back to the stylesheet
+       so the open/close animation still applies */
+    var settle = function () {
+      moveImg(0, SLIDE_MS);
+      setTimeout(function () { boxImg.style.transition = ''; }, SLIDE_MS);
+    };
+
+    /* dir: 1 = next (finger moved left), -1 = previous */
+    var slideTo = function (dir) {
+      var w = box.clientWidth;
+      sliding = true;
+      moveImg(-dir * w, SLIDE_MS);
+      setTimeout(function () {
+        step(dir);
+        moveImg(dir * w, 0);
+        /* Wait for decode so the photo doesn't paint in mid-slide;
+           a failed load still slides, and the error handler above
+           takes over. */
+        var ready = boxImg.decode ? boxImg.decode().catch(function () {}) : Promise.resolve();
+        ready.then(function () {
+          void boxImg.offsetWidth;   // commit the jump before animating back
+          settle();
+          setTimeout(function () { sliding = false; }, SLIDE_MS);
+        });
+      }, SLIDE_MS);
+    };
+
+    box.addEventListener('touchstart', function (e) {
+      drag = null;
+      if (sliding || e.touches.length > 1 || e.target.closest('button')) return;
+      if (window.visualViewport && window.visualViewport.scale > 1.01) return;
+      var p = e.touches[0];
+      drag = { x: p.clientX, y: p.clientY, dx: 0, axis: '', recent: [] };
+    }, { passive: true });
+
+    box.addEventListener('touchmove', function (e) {
+      if (!drag) return;
+      if (e.touches.length > 1) { drag = null; settle(); return; }
+      var p = e.touches[0];
+      var dx = p.clientX - drag.x;
+      var dy = p.clientY - drag.y;
+      /* Decide the axis once the finger has clearly moved, and only
+         follow it if that was sideways */
+      if (!drag.axis) {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        drag.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+      }
+      if (drag.axis !== 'x') return;
+      e.preventDefault();
+      drag.dx = dx;
+      moveImg(dx, 0);
+      /* Keep the last 100ms of movement: a flick is judged by how
+         fast the finger was going when it let go, not on average */
+      var now = Date.now();
+      drag.recent.push({ dx: dx, t: now });
+      while (drag.recent.length > 2 && now - drag.recent[0].t > 100) drag.recent.shift();
+    }, { passive: false });
+
+    var endDrag = function () {
+      if (!drag) return;
+      var d = drag;
+      drag = null;
+      if (d.axis !== 'x') return;
+      var dist = Math.abs(d.dx);
+      var first = d.recent[0];
+      var last = d.recent[d.recent.length - 1];
+      var speed = first && last !== first
+        ? Math.abs(last.dx - first.dx) / Math.max(1, last.t - first.t)   // px per ms
+        : 0;
+      if (visible.length > 1 && (dist > box.clientWidth * 0.2 || (dist > 30 && speed > 0.5))) {
+        slideTo(d.dx < 0 ? 1 : -1);
+      } else {
+        settle();
+      }
+    };
+    box.addEventListener('touchend', endDrag);
+    box.addEventListener('touchcancel', endDrag);
   }
 
   /* ── 5. Slideshow ───────────────────────────────────────── */

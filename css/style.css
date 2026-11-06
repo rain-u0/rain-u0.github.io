@@ -1232,6 +1232,9 @@ body.nav-open .nav-scrim { opacity: 1; }
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.45s var(--ease), visibility 0.45s;
+  /* Sideways drags belong to the swipe in js/main.js; pinch-zoom
+     stays with the browser */
+  touch-action: pan-y pinch-zoom;
 }
 
 .box.open { opacity: 1; visibility: visible; }
