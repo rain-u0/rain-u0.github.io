@@ -269,8 +269,9 @@ a { color: inherit; text-decoration: none; }
 .reveal--left { transform: translateX(-1.4em); }
 /* variant: fade only — large images look heavy when they also move */
 .reveal--fade { transform: none; }
-/* variant: fade + slight scale (for photo tiles) */
-.reveal--zoom { transform: translateY(1.4em) scale(0.96); }
+/* variant: fade + short rise (for photo tiles). No scale — a tile
+   can be nearly full-screen on a phone. */
+.reveal--zoom { transform: translateY(1.4em); }
 
 /* ── Layout container ─────────────────────────────────────── */
 .wrap {
@@ -831,23 +832,19 @@ body.nav-open .nav-scrim { opacity: 1; }
   width: 100%;
   height: 100%;
   object-fit: cover;
-  /* blurred until decoded, then transitions to sharp */
+  /* Fades in once decoded. Opacity only: on a phone a single-column
+     tile is nearly full-screen, and a blur or scale that large is
+     redrawn every frame of the fade. The transform transition is
+     for the desktop hover zoom below. */
   opacity: 0;
-  transform: scale(1.06);
-  filter: blur(12px);
-  transition: opacity 1s var(--ease),
-              transform 1.4s var(--ease),
-              filter 1s var(--ease);
+  transition: opacity 0.5s var(--ease),
+              transform 1.4s var(--ease);
 }
 
-.shot img.loaded {
-  opacity: 1;
-  transform: none;
-  filter: none;
-}
+.shot img.loaded { opacity: 1; }
 
 /* shown when the file is missing, instead of a broken image */
-.shot img.failed { opacity: 1; filter: none; transform: none; }
+.shot img.failed { opacity: 1; }
 
 .shot__missing {
   position: absolute;
@@ -1449,5 +1446,5 @@ body.locked { overflow: hidden; }
     transition-duration: 0.01ms !important;
   }
   .reveal { opacity: 1; transform: none; }
-  .shot img { opacity: 1; filter: none; transform: none; }
+  .shot img { opacity: 1; }
 }
