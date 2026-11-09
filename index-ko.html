@@ -20,7 +20,7 @@
   <title>rain_u.0</title>
   <meta name="description" content="휴대폰 배경화면과 단상, 그리고 흩어진 기록.">
 
-  <link rel="stylesheet" href="css/style.css?v=6be12a4044">
+  <link rel="stylesheet" href="css/style.css?v=6eb7b21021">
 
   <!-- Applies the saved palette before the first paint. It has to be
        inline and it has to be here: loaded from a file, or moved to
@@ -349,8 +349,26 @@
       </div>
 
       <span>Shot on whatever we had</span>
+      <!-- Music credit. Filled from #music's data-credit, and shown
+           only when that is set and the music file is real. -->
+      <span class="foot__music" id="music-foot" hidden></span>
     </div>
   </footer>
+
+  <!-- ★ EDIT: background music. To change the track, replace
+       audio/bgm.m4a. The control stays hidden until the file is
+       non-empty, so the 0-byte placeholder committed in audio/
+       shows nothing at all.
+       data-credit is optional: left empty, no track name appears
+       anywhere; filled in (e.g. "Song Title — Artist"), it
+       shows as a small line in the footer. Fill it in whenever the
+       track's licence asks for credit.
+       Behaviour is in js/main.js, section 6. -->
+  <div class="music" id="music" data-src="audio/bgm.m4a" data-credit="" hidden>
+    <button type="button" class="music__btn" id="music-btn" aria-pressed="false">
+      <span class="music__bars" aria-hidden="true"><i></i><i></i><i></i></span>
+    </button>
+  </div>
 
   <!-- Names the palette you just picked, then fades. aria-hidden
        because the buttons already carry aria-pressed, and a live
@@ -397,8 +415,8 @@
     <p class="show__hint">아무 곳이나 탭하면 종료</p>
   </div>
 
-  <script>window.I18N = {"js.wallpaperOn": "배경화면으로", "js.wallpaperOff": "사진 보기", "js.enlarge": "(크게 보기)", "js.wallpaperAlt": "(배경화면)", "js.missing": "이미지 없음"};</script>
+  <script>window.I18N = {"js.wallpaperOn": "배경화면으로", "js.wallpaperOff": "사진 보기", "js.enlarge": "(크게 보기)", "js.wallpaperAlt": "(배경화면)", "js.missing": "이미지 없음", "js.musicOn": "음악 재생", "js.musicOff": "음악 끄기"};</script>
   <script src="js/photos.js?v=df5d2ed8c7"></script>
-  <script src="js/main.js?v=f6c08e16d1"></script>
+  <script src="js/main.js?v=b0a157e2e0"></script>
 </body>
 </html>

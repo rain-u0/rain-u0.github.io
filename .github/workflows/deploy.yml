@@ -67,7 +67,7 @@ jobs:
           mkdir _site
           cp index.html index-en.html index-ja.html index-ko.html _site/
           cp adrain.html _site/
-          cp -r css js images _site/
+          cp -r css js images audio _site/
 
       # Encoding takes about a second a photo, so keep the results
       # between runs; tools/avif.js keys them by the JPEG's content,

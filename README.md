@@ -350,6 +350,44 @@ languages break it in two specific places:
 
 ---
 
+## Background music
+
+One track, `audio/bgm.m4a`, loops behind the whole site, with a round
+toggle in the bottom-right corner. It is committed as an **empty
+0-byte placeholder**. While it is empty the toggle never appears and
+nothing plays, so the site behaves exactly as it did without music.
+
+**To switch music on, replace that file**: on a Mac, or with
+**Upload files** on GitHub. Keep the name `bgm.m4a`. M4A (AAC) or MP3
+content both play in every current browser. Use the file exactly as
+you received it, without re-encoding or trimming, if the licence says
+so.
+
+Only add a track you have permission to use on this site. Buying a
+song, on iTunes or anywhere else, grants personal listening only.
+
+Credit is optional and lives in `template.html`, on the `#music`
+element: `data-credit="Song Title — Artist"`. Left empty,
+no track name appears anywhere. Filled in, it shows as a small line
+in the footer. Run `python3 tools/build.py` after editing it.
+
+How it behaves, so you are not surprised:
+
+- It tries to start once the page has loaded. Most browsers refuse
+  sound before the visitor has done anything, so it then starts on
+  their first tap, click or key press.
+- A visitor who turns it off stays off, including on later visits.
+- The slideshow does not change it, on or off.
+- It pauses while the tab is in the background, and picks up where
+  it left off across a language switch.
+- An iPhone on silent still plays it, the same as most music sites.
+
+Remember that the repo is public. Anyone can download the file from
+GitHub, and every version you ever commit stays in the history even
+after it is replaced.
+
+---
+
 ## Editing copy
 
 | What | Where |

@@ -147,5 +147,7 @@
   "js.wallpaperOff": { "zh": "看原圖",   "en": "See photo",    "ja": "写真に戻る", "ko": "사진 보기" },
   "js.enlarge":      { "zh": "（放大檢視）", "en": " (view larger)", "ja": "（拡大表示）", "ko": "(크게 보기)" },
   "js.wallpaperAlt": { "zh": "（桌布效果）", "en": " (as wallpaper)", "ja": "（壁紙表示）", "ko": "(배경화면)" },
-  "js.missing":      { "zh": "缺少圖檔", "en": "Missing file", "ja": "画像がありません", "ko": "이미지 없음" }
+  "js.missing":      { "zh": "缺少圖檔", "en": "Missing file", "ja": "画像がありません", "ko": "이미지 없음" },
+  "js.musicOn":      { "zh": "播放音樂", "en": "Play music", "ja": "音楽を再生", "ko": "음악 재생" },
+  "js.musicOff":     { "zh": "關閉音樂", "en": "Turn music off", "ja": "音楽を止める", "ko": "음악 끄기" }
 }

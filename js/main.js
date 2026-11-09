@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════
    rain_u.0 — behaviour script. No external libraries.
 
-   Five jobs:
+   Six jobs:
      1. Release the load lock — drop <html class="preload"> so
         transitions start applying
      2. Scroll reveal — IntersectionObserver adds .in to .reveal
@@ -9,6 +9,7 @@
      4. Lightbox — click to enlarge, arrows or swipe to move, Esc
         to close, W to toggle the wallpaper preview
      5. Slideshow — random photos from the current category
+     6. Background music — one looping track and a toggle
    ═══════════════════════════════════════════════════════════════ */
 
 (function () {
@@ -831,6 +832,160 @@
     var savedTheme = null;
     try { savedTheme = localStorage.getItem('theme'); } catch (e) {}
     applyTheme(savedTheme || DEFAULT_THEME, false);
+  }
+
+  /* ── 6. Background music ────────────────────────────────── */
+  /* One looping track and a toggle, bottom right.
+
+     It tries to start once the page has loaded, so it never takes
+     bandwidth from the photos. Browsers often refuse sound before
+     the visitor has done anything; then it starts on the first tap,
+     click or key press anywhere. A visitor who turns it off stays
+     off, on later visits too. The slideshow leaves it alone:
+     whatever the music is doing when a show starts, it keeps doing.
+
+     The toggle only appears for a real file. audio/bgm.m4a sits in
+     the repo as a 0-byte placeholder until the final track arrives,
+     and a HEAD request is the one check that works up front — iOS
+     ignores preload and fetches nothing before play().
+
+     Turning it off drops the source, so a muted visitor downloads
+     nothing more; turning it back on resumes where it stopped. The
+     position also carries across a language switch, which is a full
+     page load. It pauses while the tab is in the background. */
+  var music = document.getElementById('music');
+  if (music && music.dataset.src) {
+    var SRC       = music.dataset.src;
+    var musicBtn  = document.getElementById('music-btn');
+    var musicFoot = document.getElementById('music-foot');
+    var audio     = new Audio();
+    audio.loop    = true;
+    audio.preload = 'none';
+    var playing     = false;
+    var resumeAt    = 0;       /* seconds; applied once metadata loads */
+    var hiddenPause = false;   /* paused only because the tab was hidden */
+
+    var isMuted = function () {
+      try { return localStorage.getItem('music') === 'off'; } catch (e) { return false; }
+    };
+    var setMuted = function (off) {
+      try {
+        if (off) localStorage.setItem('music', 'off');
+        else localStorage.removeItem('music');
+      } catch (e) {}
+    };
+
+    var setUI = function (on) {
+      playing = on;
+      music.classList.toggle('is-playing', on);
+      musicBtn.setAttribute('aria-pressed', String(on));
+      musicBtn.setAttribute('aria-label', t(on ? 'js.musicOff' : 'js.musicOn'));
+    };
+
+    /* Must run inside the gesture's own call stack to count as one,
+       so nothing asynchronous comes before audio.play() */
+    var play = function () {
+      if (!audio.getAttribute('src')) audio.src = SRC;
+      return audio.play().then(function () { setUI(true); disarm(); });
+    };
+
+    var stop = function () {
+      resumeAt = audio.currentTime;
+      audio.pause();
+      audio.removeAttribute('src');
+      audio.load();
+      setUI(false);
+    };
+
+    /* Start on the first interaction, if autoplay was refused. Every
+       event of a tap is listened for, since browsers differ on which
+       of them counts as permission; play() on music already starting
+       is harmless. */
+    var GESTURES = ['pointerup', 'touchend', 'click', 'keydown'];
+    var onGesture = function (e) {
+      if (music.contains(e.target)) return;   /* the toggle handles itself */
+      if (playing || audio.error) { disarm(); return; }
+      play().catch(function () {});
+    };
+    var arm = function () {
+      GESTURES.forEach(function (g) { document.addEventListener(g, onGesture, true); });
+    };
+    var disarm = function () {
+      GESTURES.forEach(function (g) { document.removeEventListener(g, onGesture, true); });
+    };
+
+    musicBtn.addEventListener('click', function () {
+      if (playing) {
+        stop();
+        setMuted(true);
+        disarm();
+      } else {
+        setMuted(false);
+        play().catch(function () {});
+      }
+    });
+
+    audio.addEventListener('loadedmetadata', function () {
+      if (resumeAt) { audio.currentTime = resumeAt; resumeAt = 0; }
+    });
+
+    /* Keep the toggle honest when the system pauses or resumes it —
+       a phone call, another app's audio, the lock-screen controls */
+    audio.addEventListener('playing', function () { setUI(true); });
+    audio.addEventListener('pause', function () { if (!hiddenPause) setUI(false); });
+
+    /* A file that will not play: take the toggle away rather than
+       leave a dead button. stop() empties src on purpose; that is
+       not a failure. */
+    audio.addEventListener('error', function () {
+      if (!audio.getAttribute('src')) return;
+      music.hidden = true;
+      if (musicFoot) musicFoot.hidden = true;
+      disarm();
+    });
+
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) {
+        if (playing) { hiddenPause = true; audio.pause(); }
+      } else if (hiddenPause) {
+        hiddenPause = false;
+        audio.play().catch(function () {
+          /* coming back can need a fresh gesture on some phones */
+          setUI(false);
+          if (!isMuted()) arm();
+        });
+      }
+    });
+
+    window.addEventListener('pagehide', function () {
+      try {
+        if (playing) sessionStorage.setItem('music-at', String(audio.currentTime));
+        else sessionStorage.removeItem('music-at');
+      } catch (e) {}
+    });
+
+    var startMusic = function () {
+      music.hidden = false;
+      var credit = music.dataset.credit;
+      if (musicFoot && credit) {
+        musicFoot.textContent = '♪ ' + credit;
+        musicFoot.hidden = false;
+      }
+      setUI(false);
+      try { resumeAt = Number(sessionStorage.getItem('music-at')) || 0; } catch (e) {}
+      if (isMuted()) return;
+      play().catch(function () { if (!audio.error) arm(); });
+    };
+
+    /* A missing Content-Length is not proof of an empty file; let
+       the error handler above judge those. */
+    var checkMusic = function () {
+      fetch(SRC, { method: 'HEAD', cache: 'no-cache' }).then(function (r) {
+        if (r.ok && r.headers.get('content-length') !== '0') startMusic();
+      }, function () {});
+    };
+    if (document.readyState === 'complete') checkMusic();
+    else window.addEventListener('load', checkMusic);
   }
 
   /* Hero portrait: show the placeholder if the file is missing */

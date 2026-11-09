@@ -20,7 +20,7 @@
   <title>rain_u.0</title>
   <meta name="description" content="スマホの壁紙と雑記、そして散らばった記録。">
 
-  <link rel="stylesheet" href="css/style.css?v=6be12a4044">
+  <link rel="stylesheet" href="css/style.css?v=6eb7b21021">
 
   <!-- Applies the saved palette before the first paint. It has to be
        inline and it has to be here: loaded from a file, or moved to
@@ -349,8 +349,26 @@
       </div>
 
       <span>Shot on whatever we had</span>
+      <!-- Music credit. Filled from #music's data-credit, and shown
+           only when that is set and the music file is real. -->
+      <span class="foot__music" id="music-foot" hidden></span>
     </div>
   </footer>
+
+  <!-- ★ EDIT: background music. To change the track, replace
+       audio/bgm.m4a. The control stays hidden until the file is
+       non-empty, so the 0-byte placeholder committed in audio/
+       shows nothing at all.
+       data-credit is optional: left empty, no track name appears
+       anywhere; filled in (e.g. "Song Title — Artist"), it
+       shows as a small line in the footer. Fill it in whenever the
+       track's licence asks for credit.
+       Behaviour is in js/main.js, section 6. -->
+  <div class="music" id="music" data-src="audio/bgm.m4a" data-credit="" hidden>
+    <button type="button" class="music__btn" id="music-btn" aria-pressed="false">
+      <span class="music__bars" aria-hidden="true"><i></i><i></i><i></i></span>
+    </button>
+  </div>
 
   <!-- Names the palette you just picked, then fades. aria-hidden
        because the buttons already carry aria-pressed, and a live
@@ -397,8 +415,8 @@
     <p class="show__hint">どこかをタップで終了</p>
   </div>
 
-  <script>window.I18N = {"js.wallpaperOn": "壁紙で見る", "js.wallpaperOff": "写真に戻る", "js.enlarge": "（拡大表示）", "js.wallpaperAlt": "（壁紙表示）", "js.missing": "画像がありません"};</script>
+  <script>window.I18N = {"js.wallpaperOn": "壁紙で見る", "js.wallpaperOff": "写真に戻る", "js.enlarge": "（拡大表示）", "js.wallpaperAlt": "（壁紙表示）", "js.missing": "画像がありません", "js.musicOn": "音楽を再生", "js.musicOff": "音楽を止める"};</script>
   <script src="js/photos.js?v=df5d2ed8c7"></script>
-  <script src="js/main.js?v=f6c08e16d1"></script>
+  <script src="js/main.js?v=b0a157e2e0"></script>
 </body>
 </html>

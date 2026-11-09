@@ -65,7 +65,7 @@ OUT = {"zh": "index.html", "en": "index-en.html",
 # Strings consumed by js/main.js rather than the template. Injected
 # into each page as window.I18N so the script stays language-agnostic.
 JS_KEYS = ["js.wallpaperOn", "js.wallpaperOff", "js.enlarge",
-           "js.wallpaperAlt", "js.missing"]
+           "js.wallpaperAlt", "js.missing", "js.musicOn", "js.musicOff"]
 
 # Placeholders this script builds itself rather than looking up.
 SYNTHETIC = {"lang.switcher"}
