@@ -105,6 +105,10 @@ const PHOTOS = [
     t: { zh: '柳川本町', en: 'Hommachi, Yanagawa', ja: '柳川本町', ko: '야나가와 혼마치' } },
   { file: 'busan_club_d_oasis', cat: 'travel', w: 914, h: 1600, demo: true,
     t: { zh: '釜山 Club D Oasis', en: 'Club D Oasis, Busan', ja: '釜山 Club D Oasis', ko: '부산 클럽디 오아시스' } },
+  { file: 'busan_ananti_cove', cat: 'travel', w: 909, h: 1600, demo: true,
+    t: { zh: '釜山 Ananti Cove', en: 'Ananti Cove, Busan', ja: '釜山 Ananti Cove', ko: '부산 아난티 코브' } },
+  { file: 'busan_ananti_cove_spa', cat: 'travel', w: 915, h: 1600, demo: true,
+    t: { zh: '釜山 Ananti Cove Spa', en: 'Ananti Cove Spa, Busan', ja: '釜山 Ananti Cove スパ', ko: '부산 아난티 코브 스파' } },
 
   // ── mood — no place name, light and atmosphere ───────────
   { file: 'city_trail', cat: 'mood', w: 2400, h: 3200, demo: true,
